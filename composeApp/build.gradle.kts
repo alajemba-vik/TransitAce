@@ -44,6 +44,9 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
+
+            // Have Ktor use the OkHttp engine for Android
+            implementation(libs.ktor.client.okhttp)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -54,6 +57,15 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+
+            // Enable Ktor client functionality in shared code
+            implementation(libs.ktor.client.core)
+            // For negotiating media types between the client and server
+            implementation(libs.ktor.client.content.negotiation)
+            // Serialize and deserialize JSON
+            implementation(libs.ktor.serialization.kotlinx.json)
+            // Use coroutines in Android code
+            implementation(libs.kotlinx.coroutines.core)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -61,6 +73,11 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
+        }
+
+        iosMain.dependencies {
+            // Have Ktor use the Darwin engine for iOS
+            implementation(libs.ktor.client.darwin)
         }
     }
 }
