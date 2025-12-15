@@ -1,0 +1,14 @@
+<resources>
+    <string name="connected">Connected</string>
+    <string name="disconnected">Disconnected</string>
+    <string name="connecting_ellipsis">Connecting...</string>
+    <string name="map">Map</string>
+    <string name="comms">Comms</string>
+    <string name="chat_window_title">Sophie_Hotline_v2.0</string>
+    <string name="ai_name">Sophie_Hotline_v2.0</string>
+    <string name="you">You</string>
+    <string name="reply_ellipsis">Reply...</string>
+    <string name="send">Send</string>
+    <string name="chat_window_provide_language_instruction">[ TYPE 'ENGLISH' OR 'FRENCH' ABOVE ]</string>
+    <string name="chat_window_initial_message">Wake up! Orly isn't the Ritz. I'm Sophie. Listen to me and you might save some money. English or French?</string>
+</resources>

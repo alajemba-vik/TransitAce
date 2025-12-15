@@ -69,6 +69,6 @@ object TerminalPalette {
     val ConsoleCursor = RetroAmber
     val DisabledText = DimGray
     val Separator = BorderGray
-    val SophieSpeech = ElectricBlue // Specific color for the AI character
+    val AISpeech = ElectricBlue // Specific color for the AI character
     val FineOverlay = CrimsonRed.copy(alpha = 0.2f) // Flash this when fined
 }

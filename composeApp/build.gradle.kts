@@ -8,6 +8,8 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
+    alias(libs.plugins.kotlinxSerialization)
+    alias(libs.plugins.sqldelight)
 }
 
 kotlin {
@@ -41,12 +43,19 @@ kotlin {
     }
     
     sourceSets {
+        all {
+
+            languageSettings.optIn("kotlin.time.ExperimentalTime")
+        }
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
 
             // Have Ktor use the OkHttp engine for Android
             implementation(libs.ktor.client.okhttp)
+
+            // Have SQLDelight support Android
+            implementation(libs.android.driver)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -78,6 +87,8 @@ kotlin {
         iosMain.dependencies {
             // Have Ktor use the Darwin engine for iOS
             implementation(libs.ktor.client.darwin)
+            // Have SQLDelight support IOS
+            implementation(libs.native.driver)
         }
     }
 }
@@ -121,6 +132,14 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "com.alajemba.paristransitace"
             packageVersion = "1.0.0"
+        }
+    }
+}
+
+sqldelight {
+    databases {
+        create("ParisTransitDatabase") {
+            packageName = "com.alajemba.paristransitace.db"
         }
     }
 }
