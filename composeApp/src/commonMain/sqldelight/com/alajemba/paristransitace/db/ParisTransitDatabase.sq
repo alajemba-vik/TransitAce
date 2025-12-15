@@ -1,0 +1,15 @@
+CREATE TABLE ChatMessages (
+    id INTEGER NOT NULL PRIMARY KEY,
+    sender TEXT NOT NULL,
+    message TEXT NOT NULL,
+    timestamp INTEGER DEFAULT CURRENT_TIMESTAMP
+);
+
+insertChatMessage:
+INSERT INTO ChatMessages (id, sender, message, timestamp) VALUES (?,?,?, ?);
+
+removeAllChatMessages:
+DELETE FROM ChatMessages;
+
+selectAllChatMessages:
+SELECT * FROM ChatMessages;
