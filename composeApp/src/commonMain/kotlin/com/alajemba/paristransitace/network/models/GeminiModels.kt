@@ -4,6 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class GeminiRequest (
+    val systemInstruction: Parts,
     val contents: List<Content>
 )
 
@@ -27,6 +28,11 @@ data class Content (
 @Serializable
 data class Part (
     val text: String
+)
+
+@Serializable
+data class Parts(
+    val parts: List<Part>
 )
 
 /*

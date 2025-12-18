@@ -5,6 +5,7 @@ import app.cash.sqldelight.coroutines.mapToList
 import com.alajemba.paristransitace.db.ParisTransitDatabase
 import com.alajemba.paristransitace.entity.ChatMessageEntity
 import com.alajemba.paristransitace.network.LLMApi
+import com.alajemba.paristransitace.network.models.ApiResponse
 import com.alajemba.paristransitace.ui.model.ChatMessageSender
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -32,14 +33,30 @@ internal class ChatSDK(
         dbQuery.removeAllChatMessages()
     }
 
-    suspend fun insertChatMessage(message: String, sender: ChatMessageSender) {
+    suspend fun sendChatMessage(message: String, sender: String): ApiResponse<*> {
         dbQuery.insertChatMessage(
             id = null,
-            sender = sender.name,
+            sender = sender,
             message = message,
             timestamp = Clock.System.now().toEpochMilliseconds(),
         )
+
+        val response = llmApi.sendChatMessage(message)
+
+        println(response.data)
+
+        val message = if (response.data.isNullOrBlank()) "Sophie is on a cigarette break. (Connection Error)" else response.data
+
+        dbQuery.insertChatMessage(
+            id = null,
+            sender = ChatMessageSender.AI.name,
+            message = message,
+            timestamp = Clock.System.now().toEpochMilliseconds(),
+        )
+
+        return response
     }
+
 
 
 

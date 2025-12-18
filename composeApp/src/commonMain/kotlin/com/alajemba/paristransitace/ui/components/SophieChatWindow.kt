@@ -6,22 +6,16 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.alajemba.paristransitace.ui.model.ChatMessage
+import com.alajemba.paristransitace.ui.model.ChatUiModel
 import com.alajemba.paristransitace.ui.model.ChatMessageSender
 import com.alajemba.paristransitace.ui.theme.AlertRed
 import com.alajemba.paristransitace.ui.theme.Dimens
 import com.alajemba.paristransitace.ui.theme.RetroAmber
-import com.alajemba.paristransitace.ui.theme.TerminalPalette.Separator
 import com.alajemba.paristransitace.ui.theme.VoidBlack
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -31,19 +25,19 @@ import paristransitace.composeapp.generated.resources.chat_window_initial_messag
 import paristransitace.composeapp.generated.resources.chat_window_provide_language_instruction
 import paristransitace.composeapp.generated.resources.chat_window_title
 import paristransitace.composeapp.generated.resources.reply_ellipsis
-import paristransitace.composeapp.generated.resources.send
 import paristransitace.composeapp.generated.resources.you
 
 @Composable
 fun AIChatWindow(
-    chatMessages: List<ChatMessage>,
-    onSend: (String) -> Unit
+    chatMessages: List<ChatUiModel>,
+    onSend: (String) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(VoidBlack)
-            .padding(Dimens.Space.medium)
+            .padding(horizontal = Dimens.Space.medium)
             .border(Dimens.Border.thin, RetroAmber.copy(alpha = 0.3f)) // Outer frame
             .padding(Dimens.Space.small) // Inner padding inside the frame
     ) {
@@ -62,7 +56,15 @@ fun AIChatWindow(
 
         Spacer(modifier = Modifier.height(Dimens.Space.medium))
 
-        ChatInputField(stringResource(Res.string.reply_ellipsis), onSend)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight(),
+            contentAlignment = Alignment.Center
+        ) {
+            ChatInputField(stringResource(Res.string.reply_ellipsis), onSend)
+        }
+
 
         Spacer(modifier = Modifier.height(Dimens.Space.small))
 
@@ -95,7 +97,7 @@ private fun TitleBar() {
 }
 
 @Composable
-private fun WindowContent(chatMessages: List<ChatMessage>) {
+private fun WindowContent(chatMessages: List<ChatUiModel>) {
     Box(modifier = Modifier.padding(Dimens.Space.medium)) {
 
         LazyColumn(
@@ -128,7 +130,7 @@ private fun WindowContent(chatMessages: List<ChatMessage>) {
 }
 
 @Composable
-private fun Footer() {
+fun Footer() {
     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         Text(
             text = stringResource(Res.string.chat_window_provide_language_instruction).uppercase(),
@@ -145,11 +147,11 @@ private fun Footer() {
 fun AIChatWindowPreview() {
     AIChatWindow(
         chatMessages = listOf(
-            ChatMessage(
+            ChatUiModel(
                 sender = ChatMessageSender.AI,
                 message = stringResource(Res.string.chat_window_initial_message)
             )
         ),
-        onSend = {}
+        onSend = {},
     )
 }

@@ -7,6 +7,8 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,20 +20,24 @@ import com.alajemba.paristransitace.ui.theme.Dimens
 import com.alajemba.paristransitace.ui.theme.RetroAmber
 import com.alajemba.paristransitace.ui.theme.TerminalPalette.Separator
 import com.alajemba.paristransitace.ui.theme.VoidBlack
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun ChatInputField(
     hint: String,
     onSend: (String) -> Unit
 ) {
+
+    val textFieldValue = remember { mutableStateOf("") }
+
     Row(
-        modifier = Modifier.fillMaxWidth().height(50.dp),
+        modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxHeight()
+                .heightIn(50.dp)
                 .border(Dimens.Border.thin, Separator)
                 .background(VoidBlack)
                 .padding(horizontal = Dimens.Space.small),
@@ -43,9 +49,9 @@ fun ChatInputField(
                 color = Color.Gray
             )
             BasicTextField(
-                value = "",
+                value = textFieldValue.value,
                 onValueChange = {
-
+                    textFieldValue.value = it
                 },
                 textStyle = TextStyle(
                     color = RetroAmber,
@@ -59,6 +65,13 @@ fun ChatInputField(
 
         Spacer(modifier = Modifier.width(Dimens.Space.small))
 
-        ActionButton(onSend)
+        ActionButton(onSend = { onSend(textFieldValue.value) })
     }
+}
+
+
+@Preview
+@Composable
+fun ChatInputFieldPreview() {
+    ChatInputField(hint = "Enter your message here", onSend = {})
 }

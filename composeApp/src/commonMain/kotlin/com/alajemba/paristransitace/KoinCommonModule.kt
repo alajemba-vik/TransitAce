@@ -4,6 +4,8 @@ import com.alajemba.paristransitace.db.DatabaseDriverFactory
 import com.alajemba.paristransitace.db.ParisTransitDatabase
 import com.alajemba.paristransitace.network.LLMApi
 import com.alajemba.paristransitace.ui.viewmodels.ChatViewModel
+import com.alajemba.paristransitace.ui.viewmodels.GameViewModel
+import com.alajemba.paristransitace.ui.viewmodels.UserViewModel
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.json
@@ -38,6 +40,14 @@ val commonModule = module {
 
     viewModel {
         ChatViewModel(get())
+    }
+
+    viewModel {
+        UserViewModel(get())
+    }
+
+    viewModel {
+        GameViewModel(get())
     }
 }
 

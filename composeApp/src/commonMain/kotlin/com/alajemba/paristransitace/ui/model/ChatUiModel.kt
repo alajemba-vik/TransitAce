@@ -1,6 +1,6 @@
 package com.alajemba.paristransitace.ui.model
 
-class ChatMessage(
+class ChatUiModel(
     val sender: ChatMessageSender,
     val message: String
 )

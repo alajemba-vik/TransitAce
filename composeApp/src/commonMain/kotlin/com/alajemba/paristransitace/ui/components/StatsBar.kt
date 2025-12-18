@@ -26,29 +26,34 @@ import paristransitace.composeapp.generated.resources.map
 
 @Composable
 fun StatsBar(
-    userStats: UserStats
+    userStats: UserStats,
+    alertsCount: Int
 ){
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(Dimens.Space.medium),
-        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
     ) {
-        Text(userStats.budget.toString(), color = RetroAmber, style = MaterialTheme.typography.labelMedium)
-        Text("|", color = Color.Gray)
-        Text(userStats.confidence.toString(), color = RetroAmber, style = MaterialTheme.typography.labelMedium)
-        Text("|", color = Color.Gray)
-        Text(userStats.morale.toString(), color = RetroAmber, style = MaterialTheme.typography.labelMedium)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(userStats.budget.toString(), color = RetroAmber, style = MaterialTheme.typography.labelMedium)
+            Divider()
+            Text(userStats.morale.toString()+"%", color = RetroAmber, style = MaterialTheme.typography.labelMedium)
+            Divider()
+            Text(alertsCount.toString(), color = RetroAmber, style = MaterialTheme.typography.labelMedium)
 
-        Spacer(modifier = Modifier.width(Dimens.Space.small))
+            Spacer(modifier = Modifier.width(Dimens.Space.small))
 
-        // Map / Comms Tabs
-        HeaderTab(
-            stringResource(Res.string.map).uppercase(),
-            active = false,
-        )
-        HeaderTab(stringResource(Res.string.comms).uppercase(),active = true)
+            HeaderTab(stringResource(Res.string.map).uppercase(), active = false,)
+            HeaderTab(stringResource(Res.string.comms).uppercase(),active = true)
+        }
     }
 }
+
+@Composable
+private fun Divider()  = Text("|", color = Color.Gray)
 
 @Composable
 fun HeaderTab(text: String, active: Boolean) {
