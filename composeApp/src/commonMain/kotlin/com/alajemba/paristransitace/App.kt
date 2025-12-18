@@ -7,10 +7,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alajemba.paristransitace.ui.pages.GameScreen
 import com.alajemba.paristransitace.ui.theme.Dimens
 import com.alajemba.paristransitace.ui.theme.ParisTransitTheme
+import com.alajemba.paristransitace.ui.viewmodels.ChatViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 @Preview
@@ -21,7 +24,9 @@ fun App() {
                 .background(MaterialTheme.colorScheme.background)
                 .padding(Dimens.Space.medium),
         ){
-            GameScreen()
+            GameScreen(
+                chatViewModel = koinViewModel()
+            )
         }
 
 

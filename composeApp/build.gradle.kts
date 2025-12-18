@@ -1,6 +1,7 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -10,6 +11,8 @@ plugins {
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.kotlinxSerialization)
     alias(libs.plugins.sqldelight)
+    // For reading information from local.properties
+    id("com.github.gmazzo.buildconfig") version "6.0.6"
 }
 
 kotlin {
@@ -75,6 +78,14 @@ kotlin {
             implementation(libs.ktor.serialization.kotlinx.json)
             // Use coroutines in Android code
             implementation(libs.kotlinx.coroutines.core)
+            // Koin for DI
+            implementation(libs.koin.core)
+            // SQLDelight
+            implementation(libs.runtime)
+            implementation(libs.coroutines.extensions)
+            // Koin for Compose ViewModels (provides androidContext extensions)
+            implementation(libs.koin.compose.viewmodel)
+
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -142,4 +153,14 @@ sqldelight {
             packageName = "com.alajemba.paristransitace.db"
         }
     }
+}
+
+val localProperties = Properties()
+val localFile = rootProject.file("local.properties")
+localProperties.load(localFile.inputStream())
+
+buildConfig {
+    packageName("com.alajemba.paristransitace")
+    val geminiKey = localProperties["GEMINI_API_KEY"]?.toString() ?: ""
+    buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
 }

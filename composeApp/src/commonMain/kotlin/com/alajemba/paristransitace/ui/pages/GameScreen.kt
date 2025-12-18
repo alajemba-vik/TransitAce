@@ -8,20 +8,24 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.alajemba.paristransitace.commonModule
 import com.alajemba.paristransitace.ui.components.AIChatWindow
 import com.alajemba.paristransitace.ui.components.StatsBar
 import com.alajemba.paristransitace.ui.model.AIStatus
 import com.alajemba.paristransitace.ui.model.UserStats
 import com.alajemba.paristransitace.ui.theme.Dimens
+import com.alajemba.paristransitace.ui.viewmodels.ChatViewModel
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.compose.KoinApplicationPreview
+import org.koin.compose.viewmodel.koinViewModel
 import paristransitace.composeapp.generated.resources.Res
 import paristransitace.composeapp.generated.resources.connected
 import paristransitace.composeapp.generated.resources.connecting_ellipsis
 import paristransitace.composeapp.generated.resources.disconnected
 
 @Composable
-fun GameScreen() {
+internal fun GameScreen(chatViewModel: ChatViewModel) {
     Column(
         modifier = Modifier.fillMaxSize()
     ){
@@ -40,7 +44,9 @@ fun GameScreen() {
         )
         AIChatWindow(
             chatMessages = listOf(),
-            onSend = {}
+            onSend = {
+
+            }
         )
 
     }
@@ -66,5 +72,8 @@ fun AIConnectionStatusBar(status: AIStatus){
 @Preview
 @Composable
 fun GameScreenPreview() {
-    GameScreen()
+    KoinApplicationPreview(application = { modules(commonModule) }) {
+        GameScreen(koinViewModel())
+    }
+
 }
