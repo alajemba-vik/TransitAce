@@ -11,6 +11,7 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import org.koin.core.module.dsl.viewModel
+import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 val commonModule = module {
@@ -37,14 +38,15 @@ val commonModule = module {
         ChatSDK(get(), get())
     }
 
-
-    viewModel {
+    single {
         ChatViewModel(get())
     }
+    viewModelOf(::ChatViewModel)
 
-    viewModel {
+    single {
         UserViewModel(get())
     }
+    viewModelOf(::UserViewModel)
 
     viewModel {
         GameViewModel(get())

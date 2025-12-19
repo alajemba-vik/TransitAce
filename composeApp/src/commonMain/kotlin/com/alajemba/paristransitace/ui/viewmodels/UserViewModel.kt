@@ -26,8 +26,9 @@ internal class UserViewModel(private val chatSDK: ChatSDK) : ViewModel() {
                      val isFrench = cleanedInput == "french"
 
                      if (isEnglish || isFrench) {
-                         _gameSetupState.value =
-                             gameSetupState.value.copy(language = if (isEnglish) GameLanguage.ENGLISH else GameLanguage.FRENCH)
+                         _gameSetupState.value = gameSetupState.value.copy(
+                             language = if (isEnglish) GameLanguage.ENGLISH else GameLanguage.FRENCH
+                         )
                      }
                  }
 
@@ -51,10 +52,11 @@ internal class UserViewModel(private val chatSDK: ChatSDK) : ViewModel() {
         }
     }
 
-    fun updateStats(cost: Double, moraleImpact: Int) {
+    fun updateStats(budgetImpact: Double, moraleImpact: Int) {
+        // Apply impacts additively: positive increases, negative decreases.
         _userStatsState.value = _userStatsState.value.copy(
-            budget = _userStatsState.value.budget - cost,
-            morale = _userStatsState.value.morale - moraleImpact
+            budget = _userStatsState.value.budget + budgetImpact,
+            morale = _userStatsState.value.morale + moraleImpact
         )
     }
 

@@ -1,16 +1,40 @@
 <resources>
-    <string name="connected">Connected</string>
-    <string name="disconnected">Disconnected</string>
-    <string name="connecting_ellipsis">Connecting...</string>
-    <string name="map">Map</string>
-    <string name="comms">Comms</string>
+    <string name="connected">Connecté</string>
+    <string name="disconnected">Déconnecté</string>
+    <string name="connecting_ellipsis">Connexion...</string>
+    <string name="map">Carte</string>
+    <string name="comms">Communications</string>
     <string name="chat_window_title">Sophie_Hotline_v2.0</string>
-    <string name="ai_name">Sophie_Hotline_v2.0</string>
-    <string name="you">You</string>
-    <string name="reply_ellipsis">Reply...</string>
-    <string name="send">Send</string>
-    <string name="scenario">Scenario</string>
-    <string name="log">Log</string>
-    <string name="chat_window_provide_language_instruction">[ TYPE 'ENGLISH' OR 'FRENCH' ABOVE ]</string>
-    <string name="chat_window_initial_message">Wake up! Orly isn't the Ritz. I'm Sophie. Listen to me and you might save some money. English or French?</string>
+    <string name="ai_name">Sophie</string>
+    <string name="you">Vous</string>
+    <string name="reply_ellipsis">Répondre...</string>
+    <string name="send">Envoyer</string>
+    <string name="scenario">Scénario</string>
+    <string name="log">Journal</string>
+    <string name="morale">Morale</string>
+    <string name="next">Suivant</string>
+    <string name="game_screen_scenario_options_description">Actions disponibles</string>
+    <string name="chat_window_provide_language_instruction">[ TAPEZ 'ENGLISH' OU 'FRENCH' CI-DESSUS ]</string>
+    <string name="chat_window_initial_message">Réveillez‑vous ! Orly n'est pas le Ritz. Je suis Sophie. Écoutez‑moi et vous pourriez économiser de l'argent. Anglais ou Français ?</string>
+
+
+    <string name="landing_wake_up">Réveillez‑vous.</string>
+    <string name="landing_landed_desc">Vous venez d'atterrir à Paris depuis la Tanzanie.\n20 ans. 100€ en poche. Aucune expérience.</string>
+    <string name="landing_official">SYSTÈME OFFICIEL</string>
+    <string name="landing_build">BUILD : 2025.REFORM.V1</string>
+    <string name="landing_id">ID : FR-75-IDF-001</string>
+    <string name="landing_title">PARIS TRANSIT ACE : LA COURSE IMAGINE R</string>
+    <string name="landing_year_changed">Nous sommes en 2025. Tout a changé :</string>
+    <string name="landing_bullet1">Les tickets papier sont morts</string>
+    <string name="landing_bullet1_highlight">morts</string>
+    <string name="landing_bullet2">Les zones tarifaires sont abolies</string>
+    <string name="landing_bullet2_highlight">abolies</string>
+    <string name="landing_bullet3">Une erreur = amende de 60 €</string>
+    <string name="landing_bullet3_highlight">amende de 60 €</string>
+    <string name="landing_instructions">Parcourez 8 scénarios. Gérez votre budget.\nÉvitez les contrôleurs. Maîtrisez la bureaucratie.</string>
+    <string name="landing_guide">Votre guide : Sophie, une grand-mère parisienne de 68 ans.</string>
+    <string name="landing_guide_desc">Elle est sarcastique, cash, et votre seule chance.</string>
+    <string name="landing_click_to_begin">[CLIQUER POUR COMMENCER]</string>
+    <string name="landing_begin_simulation">LANCER LA SIMULATION</string>
+    <string name="landing_footer">MINISTÈRE DE L'ÉDUCATION • RÉPUBLIQUE FRANÇAISE\n• JEU ÉDUCATIF • NE PAS COLLECTER DE DONNÉES PERSONNELLES •\nÉTABLI. 2025</string>
 </resources>

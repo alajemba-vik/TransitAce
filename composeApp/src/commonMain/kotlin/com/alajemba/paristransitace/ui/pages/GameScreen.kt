@@ -20,9 +20,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.alajemba.paristransitace.ui.components.StatsBar
+import com.alajemba.paristransitace.ui.components.TypewriterText
 import com.alajemba.paristransitace.ui.model.Scenario
 import com.alajemba.paristransitace.ui.model.ScenarioOption
 import com.alajemba.paristransitace.ui.model.UserStats
+import com.alajemba.paristransitace.ui.theme.AlertRed
 import com.alajemba.paristransitace.ui.theme.Dimens
 import com.alajemba.paristransitace.ui.theme.RetroAmber
 import com.alajemba.paristransitace.ui.theme.VoidBlack
@@ -30,17 +32,17 @@ import com.alajemba.paristransitace.ui.viewmodels.GameViewModel
 import com.alajemba.paristransitace.ui.viewmodels.UserViewModel
 import org.jetbrains.compose.resources.stringResource
 import paristransitace.composeapp.generated.resources.Res
-import paristransitace.composeapp.generated.resources.game_screen_scenario_options_description
-import paristransitace.composeapp.generated.resources.scenario
+import paristransitace.composeapp.generated.resources.*
 
 @Composable
 internal fun GameScreen(
     gameViewModel: GameViewModel,
     userViewModel: UserViewModel,
-    onGameOver: (Int, String) -> Unit
+    onGameOver: () -> Unit
 ) {
 
     LaunchedEffect(Unit) {
+        println("GameScreen LaunchedEffect: Starting game with isEnglish = ${userViewModel.gameSetupState.value.isEnglish}")
         gameViewModel.startGame(userViewModel.gameSetupState.value.isEnglish)
     }
 
@@ -64,12 +66,16 @@ internal fun GameScreen(
             onOptionSelected = { option ->
                 gameViewModel.onOptionSelected(option)
                 userViewModel.updateStats(
-                    cost = option.cost,
+                    budgetImpact = option.budgetImpact,
                     moraleImpact = option.moraleImpact
                 )
+            },
+            loadNextScenario = {
+                val isGameOver = !gameViewModel.nextScenario()
+                if (isGameOver) {
+                    onGameOver()
+                }
             }
-
-
         )
     }
 }
@@ -82,6 +88,7 @@ private fun ColumnScope.ScreenContent(
     unreadAlertsCount: Int,
     userStats: UserStats,
     onOptionSelected: (option: ScenarioOption) -> Unit,
+    loadNextScenario: () -> Unit,
 ) {
     ScreenHeader(
         scenarioTitle =  "${stringResource(Res.string.scenario).uppercase()} ${currentScenario?.id}",
@@ -95,6 +102,9 @@ private fun ColumnScope.ScreenContent(
     )
 
     if (currentScenario != null) {
+
+        var lastSelection by remember(currentScenario) { mutableStateOf<ScenarioOption?>(null) }
+
         LazyColumn(
             modifier = Modifier.weight(1f).fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(Dimens.Space.medium)
@@ -118,7 +128,7 @@ private fun ColumnScope.ScreenContent(
                 ) {
                     Text(
                         text = currentScenario.title,
-                        style = MaterialTheme.typography.labelLarge, // VT323
+                        style = MaterialTheme.typography.labelLarge,
                         color = RetroAmber
                     )
                 }
@@ -143,7 +153,7 @@ private fun ColumnScope.ScreenContent(
                 Text(
                     text = currentScenario.description,
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onBackground // PaperText
+                    color = MaterialTheme.colorScheme.onBackground
                 )
             }
 
@@ -160,16 +170,27 @@ private fun ColumnScope.ScreenContent(
                 }
             }
 
-            itemsIndexed(currentScenario.options) { index, option ->
+            lastSelection?.apply {
+                item {
+                    ResultCard(
+                        commentary = commentary,
+                        budgetImpact = budgetImpact,
+                        moraleImpact = moraleImpact,
+                        onContinue = loadNextScenario
+                    )
+                }
+            } ?: itemsIndexed(currentScenario.options) { index, option ->
                 OptionRow(
                     index = index,
                     text = option.text,
                     onClick = {
+                        lastSelection = option
                         onOptionSelected(option)
                     }
                 )
                 Spacer(modifier = Modifier.height(Dimens.Space.small))
             }
+
         }
     }
 }
@@ -257,3 +278,64 @@ fun OptionRow(index: Int, text: String, onClick: () -> Unit) {
     }
 }
 
+@Composable
+fun ResultCard(
+    commentary: String,
+    budgetImpact: Double,
+    moraleImpact: Int,
+    onContinue: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(Dimens.Border.thin, RetroAmber)
+            .background(RetroAmber.copy(alpha = 0.05f))
+            .padding(Dimens.Space.medium)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = stringResource(Res.string.ai_name).uppercase() + ": ",
+                style = MaterialTheme.typography.labelSmall,
+                color = RetroAmber.copy(alpha = 0.7f)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(Dimens.Space.small))
+
+        TypewriterText(
+            text = commentary,
+            style = MaterialTheme.typography.bodyLarge,
+            color = RetroAmber
+        )
+
+        HorizontalDivider(color = RetroAmber.copy(alpha = 0.3f), modifier = Modifier.padding(vertical = 12.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = if (budgetImpact < 0) "-€${-budgetImpact}" else "€0.00",
+                color = if (budgetImpact < 0) AlertRed else Color.Gray,
+                style = MaterialTheme.typography.labelLarge
+            )
+
+            val moraleString = stringResource(Res.string.morale).uppercase() + (if (moraleImpact < 0) " " else " +") + "$moraleImpact"
+            Text(
+                text = moraleString,
+                color = if (moraleImpact < 0) AlertRed else Color(0xFF4CAF50), // Green if good
+                style = MaterialTheme.typography.labelLarge
+            )
+        }
+
+        Spacer(modifier = Modifier.height(Dimens.Space.medium))
+
+        Button(
+            onClick = onContinue,
+            modifier = Modifier.align(Alignment.End),
+            colors = ButtonDefaults.buttonColors(containerColor = RetroAmber)
+        ) {
+            Text(stringResource(Res.string.next).uppercase() + " >>", color = VoidBlack)
+        }
+    }
+}

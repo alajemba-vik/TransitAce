@@ -11,7 +11,29 @@
     <string name="send">Send</string>
     <string name="scenario">Scenario</string>
     <string name="log">Log</string>
+    <string name="morale">Morale</string>
+    <string name="next">Next</string>
     <string name="game_screen_scenario_options_description">Available Actions</string>
     <string name="chat_window_provide_language_instruction">[ TYPE 'ENGLISH' OR 'FRENCH' ABOVE ]</string>
     <string name="chat_window_initial_message">Wake up! Orly isn't the Ritz. I'm Sophie. Listen to me and you might save some money. English or French?</string>
+
+    <string name="landing_wake_up">Wake up.</string>
+    <string name="landing_landed_desc">You just landed in Paris from Tanzania.\n20 years old. €100 in your pocket. Zero experience.</string>
+    <string name="landing_official">SYSTÈME OFFICIEL</string>
+    <string name="landing_build">BUILD: 2025.REFORM.V1</string>
+    <string name="landing_id">ID: FR-75-IDF-001</string>
+    <string name="landing_title">PARIS TRANSIT ACE: THE IMAGINE R RACE</string>
+    <string name="landing_year_changed">The year is 2025. Everything has changed:</string>
+    <string name="landing_bullet1">Paper tickets are dead</string>
+    <string name="landing_bullet1_highlight">dead</string>
+    <string name="landing_bullet2">Fare zones are abolished</string>
+    <string name="landing_bullet2_highlight">abolished</string>
+    <string name="landing_bullet3">One mistake = €60 fine</string>
+    <string name="landing_bullet3_highlight">€60 fine</string>
+    <string name="landing_instructions">Navigate 8 scenarios. Manage your budget.\nAvoid the controllers. Master the bureaucracy.</string>
+    <string name="landing_guide">Your guide: Sophie, a 68-year-old Parisian grandmother.</string>
+    <string name="landing_guide_desc">She's sarcastic, blunt, and your only hope.</string>
+    <string name="landing_click_to_begin">[CLICK TO BEGIN]</string>
+    <string name="landing_begin_simulation">BEGIN SIMULATION</string>
+    <string name="landing_footer">MINISTRY OF EDUCATION • REPUBLIQUE FRANÇAISE\n• EDUCATIONAL GAME • NOT FOR COLLECTING PII •\nEST. 2025</string>
 </resources>

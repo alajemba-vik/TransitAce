@@ -14,6 +14,8 @@ data class Scenario(
 data class ScenarioOption(
     val id: String,
     val text: String,
-    val cost: Double = .0,
-    val moraleImpact: Int = 0,
+    val budgetImpact: Double = .0, // positive (+) or negative (-) impact on budget
+    val moraleImpact: Int = 0, // positive (+) or negative (-) impact on morale
+    val commentary: String,
+    val inventory: List<GameInventory>
 )
