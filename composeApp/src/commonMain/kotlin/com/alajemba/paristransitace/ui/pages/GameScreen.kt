@@ -5,21 +5,33 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.alajemba.paristransitace.ui.components.StatsBar
+import com.alajemba.paristransitace.ui.model.Scenario
+import com.alajemba.paristransitace.ui.model.ScenarioOption
+import com.alajemba.paristransitace.ui.model.UserStats
 import com.alajemba.paristransitace.ui.theme.Dimens
 import com.alajemba.paristransitace.ui.theme.RetroAmber
 import com.alajemba.paristransitace.ui.theme.VoidBlack
 import com.alajemba.paristransitace.ui.viewmodels.GameViewModel
 import com.alajemba.paristransitace.ui.viewmodels.UserViewModel
-import org.jetbrains.compose.ui.tooling.preview.Preview
-import org.koin.compose.viewmodel.koinViewModel
+import org.jetbrains.compose.resources.stringResource
+import paristransitace.composeapp.generated.resources.Res
+import paristransitace.composeapp.generated.resources.game_screen_scenario_options_description
+import paristransitace.composeapp.generated.resources.scenario
 
 @Composable
 internal fun GameScreen(
@@ -27,6 +39,13 @@ internal fun GameScreen(
     userViewModel: UserViewModel,
     onGameOver: (Int, String) -> Unit
 ) {
+
+    LaunchedEffect(Unit) {
+        gameViewModel.startGame(userViewModel.gameSetupState.value.isEnglish)
+    }
+
+    val currentScenario = gameViewModel.currentScenario.collectAsState().value
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -36,33 +55,61 @@ internal fun GameScreen(
             .padding(Dimens.Space.medium)
     ) {
 
-        GameHeader(
-            scenarioTitle = "SCENARIO 1", // You can map this from state.scenarioIndex
-            progress = 0.12f, // 1/8
-            money = state.money,
-            morale = state.morale,
-            alerts = state.alerts
+        ScreenContent(
+            currentScenario,
+            progress = gameViewModel.scenarioProgress.value,
+            progressText = gameViewModel.scenarioProgressText.collectAsState("").value,
+            unreadAlertsCount = gameViewModel.unreadAlertsCount.collectAsState(0).value,
+            userStats = userViewModel.userStatsState.value,
+            onOptionSelected = { option ->
+                gameViewModel.onOptionSelected(option)
+                userViewModel.updateStats(
+                    cost = option.cost,
+                    moraleImpact = option.moraleImpact
+                )
+            }
+
+
         )
+    }
+}
 
-        Spacer(modifier = Modifier.height(Dimens.Space.large))
+@Composable
+private fun ColumnScope.ScreenContent(
+    currentScenario: Scenario?,
+    progress: Float,
+    progressText: String,
+    unreadAlertsCount: Int,
+    userStats: UserStats,
+    onOptionSelected: (option: ScenarioOption) -> Unit,
+) {
+    ScreenHeader(
+        scenarioTitle =  "${stringResource(Res.string.scenario).uppercase()} ${currentScenario?.id}",
+        progress = progress,
+        progressText = progressText
+    )
 
-        // 2. SCROLLABLE CONTENT (Title + Story + Actions)
+    StatsBar(
+        userStats,
+        unreadAlertsCount = unreadAlertsCount
+    )
+
+    if (currentScenario != null) {
         LazyColumn(
             modifier = Modifier.weight(1f).fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(Dimens.Space.medium)
         ) {
-            // A. The Black Void / Image Placeholder
+
             item {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(200.dp) // Height from screenshot
+                        .height(200.dp)
                         .background(Color.Black)
                         .border(Dimens.Border.thin, RetroAmber.copy(alpha = 0.1f))
                 )
             }
 
-            // B. The Boxed Title ("The Morning in Orly")
             item {
                 Box(
                     modifier = Modifier
@@ -70,57 +117,56 @@ internal fun GameScreen(
                         .padding(horizontal = Dimens.Space.medium, vertical = Dimens.Space.small)
                 ) {
                     Text(
-                        text = state.currentScenarioTitle,
+                        text = currentScenario.title,
                         style = MaterialTheme.typography.labelLarge, // VT323
                         color = RetroAmber
                     )
                 }
             }
 
-            // C. Log Label
             item {
                 Text(
-                    text = "LOG: SCENARIO_0",
+                    text = stringResource(Res.string.scenario).uppercase() + ": " +
+                            stringResource(Res.string.scenario).uppercase() +
+                            "_${currentScenario.id}",
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.Gray.copy(alpha = 0.5f)
                 )
-                Divider(
-                    color = Color.Gray.copy(alpha = 0.2f),
+                HorizontalDivider(
+                    modifier = Modifier.padding(top = 4.dp),
                     thickness = 1.dp,
-                    modifier = Modifier.padding(top = 4.dp)
+                    color = Color.Gray.copy(alpha = 0.2f)
                 )
             }
 
-            // D. The Story Text
             item {
-                // This uses the "Crimson Pro" font (bodyLarge) per your theme
                 Text(
-                    text = "You wake up in your tiny apartment in Orly. That Uber from the airport last night drained your bank account. You have €100 left. Cardboard tickets are history. How do you prepare for the day?",
+                    text = currentScenario.description,
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onBackground // PaperText
                 )
             }
 
-            // E. "AVAILABLE ACTIONS" Label
             item {
                 Spacer(modifier = Modifier.height(Dimens.Space.small))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(modifier = Modifier.size(8.dp).background(RetroAmber.copy(alpha = 0.5f)))
                     Spacer(modifier = Modifier.width(Dimens.Space.small))
                     Text(
-                        text = "AVAILABLE ACTIONS:",
+                        text = stringResource(Res.string.game_screen_scenario_options_description).uppercase() + ":",
                         style = MaterialTheme.typography.labelMedium,
                         color = Color.Gray
                     )
                 }
             }
 
-            // F. The Buttons
-            items(state.availableOptions) { option ->
-                ActionRow(
-                    index = "1", // You can calculate this: state.availableOptions.indexOf(option) + 1
+            itemsIndexed(currentScenario.options) { index, option ->
+                OptionRow(
+                    index = index,
                     text = option.text,
-                    onClick = { gameViewModel.onOptionSelected(option) }
+                    onClick = {
+                        onOptionSelected(option)
+                    }
                 )
                 Spacer(modifier = Modifier.height(Dimens.Space.small))
             }
@@ -130,15 +176,12 @@ internal fun GameScreen(
 
 
 @Composable
-fun GameHeader(
+fun ScreenHeader(
     scenarioTitle: String,
     progress: Float,
-    money: Double,
-    morale: Int,
-    alerts: Int
+    progressText: String,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        // Row 1: Title + Progress Bar
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -146,11 +189,10 @@ fun GameHeader(
         ) {
             Text(
                 text = scenarioTitle,
-                style = MaterialTheme.typography.headlineMedium, // Big VT323
+                style = MaterialTheme.typography.headlineMedium,
                 color = Color.Gray
             )
 
-            // The Progress Lines (Visual only)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 LinearProgressIndicator(
                     progress = { progress },
@@ -159,64 +201,47 @@ fun GameHeader(
                     trackColor = Color.DarkGray,
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("1/8", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                Text(progressText, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
             }
         }
 
-        Divider(color = Color.Gray.copy(alpha = 0.3f), modifier = Modifier.padding(vertical = 8.dp))
-
-        // Row 2: Stats + Toggles
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween, // Pushes Map buttons to right
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Stats Group
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                StatItem(value = "$money", label = "", color = RetroAmber) // Money
-                StatItem(value = "$morale%", label = "", color = RetroAmber) // Morale
-                StatItem(value = "$alerts", label = "", color = if(alerts>0) MaterialTheme.colorScheme.error else RetroAmber) // Alerts
-            }
-
-            // Toggles Group (Map / Comms)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ToggleButton(text = "MAP", isActive = false)
-                ToggleButton(text = "COMMS", isActive = false)
-            }
-        }
+        HorizontalDivider(color = Color.Gray.copy(alpha = 0.3f), modifier = Modifier.padding(vertical = 8.dp))
     }
 }
 
 @Composable
-fun ActionRow(index: String, text: String, onClick: () -> Unit) {
+fun OptionRow(index: Int, text: String, onClick: () -> Unit) {
+    var wasClicked by remember { mutableStateOf(false) }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(IntrinsicSize.Min) // Forces same height
-            .border(Dimens.Border.thin, Color.Gray.copy(alpha = 0.3f))
-            .clickable { onClick() }
+            .height(IntrinsicSize.Min)
+            .border(Dimens.Border.thin, if (wasClicked) RetroAmber else Color.Gray.copy(alpha = 0.3f))
+            .clickable {
+                wasClicked = true
+                onClick()
+            }
     ) {
-        // 1. The Number Box
+
         Box(
             modifier = Modifier
                 .width(50.dp)
                 .fillMaxHeight()
-                .background(RetroAmber.copy(alpha = 0.05f))
-                .border(width = 0.dp, color = Color.Transparent) // Right border logic could go here
+                .background(RetroAmber.copy(alpha = if (wasClicked) 0.5f else 0.05f))
+                .border(width = 0.dp, color = Color.Transparent)
                 .padding(vertical = 16.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = index,
-                style = MaterialTheme.typography.headlineSmall, // Big Number
+                text = index.toString(),
+                style = MaterialTheme.typography.headlineSmall,
                 color = RetroAmber
             )
         }
 
-        // Vertical Divider
         Box(modifier = Modifier.width(1.dp).fillMaxHeight().background(Color.Gray.copy(alpha = 0.3f)))
 
-        // 2. The Text
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -225,42 +250,10 @@ fun ActionRow(index: String, text: String, onClick: () -> Unit) {
         ) {
             Text(
                 text = text,
-                style = MaterialTheme.typography.bodyLarge, // Serif font for the action description
+                style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onBackground
             )
         }
     }
 }
 
-// Small Helper for the "100.00 | 30%" text
-@Composable
-fun StatItem(value: String, label: String, color: Color) {
-    Text(
-        text = value, // You can prepend label if you want
-        style = MaterialTheme.typography.labelLarge,
-        color = color,
-        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
-    )
-}
-
-@Composable
-fun ToggleButton(text: String, isActive: Boolean) {
-    Box(
-        modifier = Modifier
-            .border(1.dp, if (isActive) RetroAmber else Color.Gray.copy(alpha = 0.5f))
-            .padding(horizontal = 8.dp, vertical = 4.dp)
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelSmall,
-            color = if (isActive) RetroAmber else Color.Gray
-        )
-    }
-}
-
-@Preview
-@Composable
-private fun GameScreenPreview() {
-    GameScreen(onGameOver = { _, _ -> })
-
-}

@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import com.alajemba.paristransitace.ui.components.AIChatWindow
 import com.alajemba.paristransitace.ui.components.StatsBar
@@ -48,12 +49,12 @@ internal fun LandingScreen(
     }
 
     ScreenContent(
-        budget = chatViewModel.userStatsState.value.budget,
-        morale = chatViewModel.userStatsState.value.morale,
-        alertsCount = chatViewModel.alertsCount.value,
-        chats = chatViewModel.chatMessages.value,
+        budget = chatViewModel.userStatsState.collectAsState().value.budget,
+        morale = chatViewModel.userStatsState.collectAsState().value.morale,
+        alertsCount = chatViewModel.alertsCount.collectAsState().value,
+        chats = chatViewModel.chatMessages.collectAsState().value,
         onSend = { message ->
-            chatViewModel.attachNewUserMessage(message)
+            chatViewModel.attachNewMessage(message, ChatMessageSender.USER)
             chatViewModel.setupGame(userViewModel.setupGame(message))
         }
     )
@@ -77,7 +78,7 @@ private fun ScreenContent(
                             budget = budget,
                             morale = morale
                         ),
-                        alertsCount = alertsCount
+                        unreadAlertsCount = alertsCount
                     )
                 }
             )

@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.alajemba.paristransitace.ChatSDK
 import com.alajemba.paristransitace.ui.model.ChatMessageSender
 import com.alajemba.paristransitace.ui.model.ChatUiModel
-import com.alajemba.paristransitace.ui.model.GameLanguage
 import com.alajemba.paristransitace.ui.model.GameSetup
 import com.alajemba.paristransitace.ui.model.UserStats
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,11 +35,11 @@ internal class ChatViewModel(private val chatSDK: ChatSDK) : ViewModel() {
     }*/
 
     fun setWelcomeMessage(initialMessageFromAI: String) {
-        _chatMessages.value = listOf(ChatUiModel(ChatMessageSender.AI, initialMessageFromAI))
+        attachNewMessage(initialMessageFromAI, ChatMessageSender.AI)
     }
 
-    fun attachNewUserMessage(input: String){
-        _chatMessages.value += ChatUiModel(ChatMessageSender.AI, input)
+    fun attachNewMessage(input: String, sender: ChatMessageSender){
+        _chatMessages.value += ChatUiModel(sender, input)
     }
 
     fun setupGame(
@@ -65,12 +64,9 @@ internal class ChatViewModel(private val chatSDK: ChatSDK) : ViewModel() {
             }.trimMargin()
         }
 
-        addNewAIMessage(chatMessage)
+        attachNewMessage(chatMessage, ChatMessageSender.AI)
     }
 
-    private fun addNewAIMessage(message: String) {
-        _chatMessages.value += ChatUiModel(ChatMessageSender.AI, message)
-    }
 
     fun sendChatMessage(message: String) {
         viewModelScope.launch {

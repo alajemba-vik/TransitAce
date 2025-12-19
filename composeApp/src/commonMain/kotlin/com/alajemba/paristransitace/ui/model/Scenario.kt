@@ -6,7 +6,8 @@ data class Scenario(
     val description: String,
     val options: List<ScenarioOption>,
     val correctOptionId: Int,
-    val nextScenarioId: String?
+    val nextScenarioId: String? = null, // TODO("Use once data is fetched from backend"
+    val currentIndexInGame: Int = 0
 )
 
 

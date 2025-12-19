@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -65,7 +66,6 @@ fun AIChatWindow(
             ChatInputField(stringResource(Res.string.reply_ellipsis), onSend)
         }
 
-
         Spacer(modifier = Modifier.height(Dimens.Space.small))
 
         Footer()
@@ -98,31 +98,56 @@ private fun TitleBar() {
 
 @Composable
 private fun WindowContent(chatMessages: List<ChatUiModel>) {
+
+    val lazyListState = rememberLazyListState()
+
+    LaunchedEffect(chatMessages) {
+        if (chatMessages.size > 2) {
+            lazyListState.animateScrollToItem(chatMessages.size - 1)
+        }
+    }
+
+
     Box(modifier = Modifier.padding(Dimens.Space.medium)) {
 
         LazyColumn(
+            state = lazyListState,
             modifier = Modifier.fillMaxWidth()
                 .border(Dimens.Border.thin, RetroAmber.copy(alpha = 0.5f))
                 .padding(Dimens.Space.medium)
         ) {
             items(chatMessages) { message ->
-                Column(
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
 
                 ) {
-                    Text(
-                        text = (if (message.sender == ChatMessageSender.AI) stringResource(Res.string.ai_name) else stringResource(
-                            Res.string.you
-                        )).uppercase(),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = RetroAmber.copy(alpha = 0.7f),
-                        modifier = Modifier.padding(bottom = Dimens.Space.tiny)
-                    )
-                    Text(
-                        text = message.message,
-                        style = MaterialTheme.typography.bodyLarge, // Crimson Pro Font
-                        color = RetroAmber
-                    )
+                    Column(
+                        modifier = Modifier
+                            .align(
+                                if (message.sender == ChatMessageSender.AI)
+                                    Alignment.CenterStart
+                                else Alignment.CenterEnd
+                            )
+                            .background(RetroAmber.copy(alpha = 0.1f)),
+                    ){
+                        Text(
+                            text = (
+                                    if (message.sender == ChatMessageSender.AI)
+                                        stringResource(Res.string.ai_name)
+                                    else stringResource(Res.string.you)
+                                    ).uppercase(),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = RetroAmber.copy(alpha = 0.7f),
+                            modifier = Modifier.padding(bottom = Dimens.Space.tiny)
+                        )
+                        Text(
+                            text = message.message,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = RetroAmber,
+                        )
 
+                    }
                 }
             }
         }

@@ -10,7 +10,7 @@ data class GameSetup(
     val isSetupComplete: Boolean get() = language != GameLanguage.UNDEFINED && name.isNotBlank()
 
     val isOnLanguageStep: Boolean get() = language == GameLanguage.UNDEFINED
-    val isOnNameStep: Boolean get() = language != GameLanguage.UNDEFINED
+    val isOnNameStep: Boolean get() = language != GameLanguage.UNDEFINED && name.isBlank()
 
     val isEnglish: Boolean get() = language == ENGLISH
 

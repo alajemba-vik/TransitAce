@@ -3,6 +3,7 @@ package com.alajemba.paristransitace.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -43,11 +44,7 @@ fun ChatInputField(
                 .padding(horizontal = Dimens.Space.small),
             contentAlignment = Alignment.CenterStart
         ) {
-            Text(
-                text = hint,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray
-            )
+
             BasicTextField(
                 value = textFieldValue.value,
                 onValueChange = {
@@ -59,13 +56,28 @@ fun ChatInputField(
                     fontSize = 16.sp
                 ),
                 cursorBrush = SolidColor(RetroAmber),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                decorationBox = { innerTextField ->
+                    innerTextField()
+
+                    if (textFieldValue.value.isEmpty()) {
+                        Text(
+                            text = hint,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Gray
+                        )
+                    }
+
+                }
             )
         }
 
         Spacer(modifier = Modifier.width(Dimens.Space.small))
 
-        ActionButton(onSend = { onSend(textFieldValue.value) })
+        ActionButton(onSend = {
+            onSend(textFieldValue.value)
+            textFieldValue.value = ""
+        })
     }
 }
 
