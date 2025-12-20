@@ -7,7 +7,7 @@ data class Scenario(
     val options: List<ScenarioOption>,
     val correctOptionId: Int,
     val nextScenarioId: String? = null, // TODO("Use once data is fetched from backend"
-    val currentIndexInGame: Int = 0
+    val currentIndexInGame: Int = -1
 )
 
 
@@ -17,5 +17,6 @@ data class ScenarioOption(
     val budgetImpact: Double = .0, // positive (+) or negative (-) impact on budget
     val moraleImpact: Int = 0, // positive (+) or negative (-) impact on morale
     val commentary: String,
-    val inventory: List<GameInventory>
+    val inventory: List<GameInventory>,
+    val increaseLegalInfractionsBy: Int = 0 // positive (+) impact on legal infractions
 )

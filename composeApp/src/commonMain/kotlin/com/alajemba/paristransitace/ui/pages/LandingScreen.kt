@@ -3,6 +3,7 @@ package com.alajemba.paristransitace.ui.pages
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -15,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -23,33 +25,76 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alajemba.paristransitace.ui.components.TypewriterText
+import com.alajemba.paristransitace.ui.onboarding.LandingAnimationStage
 import com.alajemba.paristransitace.ui.theme.AlertRed
 import com.alajemba.paristransitace.ui.theme.Dimens
 import com.alajemba.paristransitace.ui.theme.RetroAmber
 import com.alajemba.paristransitace.ui.theme.VoidBlack
-import com.alajemba.paristransitace.ui.viewmodels.UserViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
-import paristransitace.composeapp.generated.resources.Res
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import paristransitace.composeapp.generated.resources.*
+
 
 @Composable
 internal fun LandingScreen(
     onStartGame: () -> Unit,
 ) {
-    var animationStage by remember { mutableStateOf(0) }
+    var animationStage by remember { mutableStateOf<LandingAnimationStage>(LandingAnimationStage.Initial) }
+    val scope = rememberCoroutineScope()
+    var userSkippedToMoveToGame by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
 
-    LaunchedEffect(Unit) {
-        delay(500)
-        animationStage = 1
-        delay(1500)
-        animationStage = 2
-        delay(1000)
-        animationStage = 3
-        delay(1500)
-        animationStage = 4
-        delay(1000)
-        animationStage = 5
+
+    val wakeUpAnimationStage = LandingAnimationStage.WakeUp(
+        text = stringResource(Res.string.landing_wake_up)
+    )
+    val introductionAnimationStage = LandingAnimationStage.Introduction(
+        text = stringResource(Res.string.landing_landed_desc)
+    )
+    val storyAnimationStage = LandingAnimationStage.Story
+    val instructionsAnimationStage = LandingAnimationStage.Instructions
+    val startAnimationStage = LandingAnimationStage.ContinueToGame
+
+    DisposableEffect(userSkippedToMoveToGame) {
+        suspend fun waitBeforeNextAnimation(
+            time: Long,
+            beforeWait: () -> Unit = {}
+        ): Boolean {
+            if (userSkippedToMoveToGame) return true
+            beforeWait()
+            delay(time)
+            return false
+        }
+
+        val job = scope.launch {
+            if (waitBeforeNextAnimation(500)) return@launch
+
+            if (waitBeforeNextAnimation(wakeUpAnimationStage.currentStageDelayMillis) {
+                    animationStage = wakeUpAnimationStage
+                }) return@launch
+
+            if (waitBeforeNextAnimation(introductionAnimationStage.currentStageDelayMillis) {
+                    animationStage = introductionAnimationStage
+                }) return@launch
+
+            if (waitBeforeNextAnimation(storyAnimationStage.currentStageDelayMillis) {
+                    animationStage = storyAnimationStage
+                }) return@launch
+
+            if (waitBeforeNextAnimation(instructionsAnimationStage.currentStageDelayMillis) {
+                    animationStage = instructionsAnimationStage
+                }) return@launch
+
+            if (waitBeforeNextAnimation(startAnimationStage.currentStageDelayMillis) {
+                    animationStage = startAnimationStage
+                }) return@launch
+        }
+
+        onDispose {
+            job.cancel()
+        }
     }
 
     Box(
@@ -63,7 +108,7 @@ internal fun LandingScreen(
                 .statusBarsPadding()
                 .safeDrawingPadding()
                 .padding(Dimens.Space.medium)
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             AnimatedVisibility(
@@ -72,40 +117,62 @@ internal fun LandingScreen(
             ) {
                 LandingHeader()
             }
+            AnimatedVisibility(
+                visible = animationStage < LandingAnimationStage.ContinueToGame,
+                modifier = Modifier
+                    .align(Alignment.End),
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                TextButton(
+                    onClick = {
+                        onStartGame()
+                        userSkippedToMoveToGame = true
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = Color.Gray)
+                ) {
+                    Text(
+                        text = stringResource(Res.string.landing_skip_intro),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(Dimens.Space.large))
 
-            if (animationStage >= 1) {
+            if (LandingAnimationStage.WakeUp.isAfterOrOnWakeUpStage(animationStage)) {
+
                 TypewriterText(
-                    text = stringResource(Res.string.landing_wake_up),
+                    text = wakeUpAnimationStage.text,
                     style = MaterialTheme.typography.headlineSmall,
                     color = RetroAmber,
                     modifier = Modifier.fillMaxWidth(),
-                    delayMillis = 100
+                    delayMillis = wakeUpAnimationStage.typeWriterCharDelay,
                 )
             }
 
-            if (animationStage >= 2) {
+            if (LandingAnimationStage.Introduction.isAfterOrOnIntroductionStage(animationStage)) {
                 Spacer(modifier = Modifier.height(Dimens.Space.medium))
                 TypewriterText(
                     text = stringResource(Res.string.landing_landed_desc),
                     style = MaterialTheme.typography.bodyLarge,
                     color = RetroAmber,
                     modifier = Modifier.fillMaxWidth(),
-                    delayMillis = 30
+                    delayMillis = introductionAnimationStage.typeWriterCharDelay
                 )
             }
 
             Spacer(modifier = Modifier.height(Dimens.Space.large))
 
-            if (animationStage >= 3) {
+            if (animationStage >= LandingAnimationStage.Story) {
                 BulletPointList()
             }
 
             Spacer(modifier = Modifier.height(Dimens.Space.medium))
 
             AnimatedVisibility(
-                visible = animationStage >= 4,
+                visible = animationStage >= LandingAnimationStage.Instructions,
                 enter = fadeIn(tween(1000))
             ) {
                 InstructionsSection()
@@ -114,15 +181,18 @@ internal fun LandingScreen(
             Spacer(modifier = Modifier.height(40.dp))
 
             AnimatedVisibility(
-                visible = animationStage >= 5,
+                visible = animationStage >= LandingAnimationStage.ContinueToGame,
                 enter = slideInVertically(initialOffsetY = { it }) + fadeIn()
             ) {
                 LandingFooter(onStartGame = onStartGame)
+
+                LaunchedEffect(Unit) {
+                    scrollState.animateScrollTo(scrollState.maxValue)
+                }
             }
         }
     }
 }
-
 
 
 @Composable
@@ -190,9 +260,18 @@ private fun BulletPointList() {
         }
         Spacer(modifier = Modifier.height(Dimens.Space.small))
 
-        if (listStage >= 2) HighlightedBulletPoint(stringResource(Res.string.landing_bullet1), stringResource(Res.string.landing_bullet1_highlight))
-        if (listStage >= 3) HighlightedBulletPoint(stringResource(Res.string.landing_bullet2), stringResource(Res.string.landing_bullet2_highlight))
-        if (listStage >= 4) HighlightedBulletPoint(stringResource(Res.string.landing_bullet3), stringResource(Res.string.landing_bullet3_highlight))
+        if (listStage >= 2) HighlightedBulletPoint(
+            stringResource(Res.string.landing_bullet1),
+            stringResource(Res.string.landing_bullet1_highlight)
+        )
+        if (listStage >= 3) HighlightedBulletPoint(
+            stringResource(Res.string.landing_bullet2),
+            stringResource(Res.string.landing_bullet2_highlight)
+        )
+        if (listStage >= 4) HighlightedBulletPoint(
+            stringResource(Res.string.landing_bullet3),
+            stringResource(Res.string.landing_bullet3_highlight)
+        )
     }
 }
 
@@ -314,4 +393,11 @@ private fun LandingFooter(onStartGame: () -> Unit) {
             lineHeight = 12.sp
         )
     }
+}
+
+
+@Preview
+@Composable
+private fun LandingScreenPreview() {
+    LandingScreen(onStartGame = {})
 }

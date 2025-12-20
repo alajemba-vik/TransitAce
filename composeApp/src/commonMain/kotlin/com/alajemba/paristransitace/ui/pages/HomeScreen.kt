@@ -51,7 +51,7 @@ internal fun HomeScreen(
     ScreenContent(
         budget = chatViewModel.userStatsState.collectAsState().value.budget,
         morale = chatViewModel.userStatsState.collectAsState().value.morale,
-        alertsCount = chatViewModel.alertsCount.collectAsState().value,
+        legalInfractionsCount = chatViewModel.userStatsState.collectAsState().value.legalInfractionsCount,
         chats = chatViewModel.chatMessages.collectAsState().value,
         onSend = { message ->
             chatViewModel.attachNewMessage(message, ChatMessageSender.USER)
@@ -65,7 +65,7 @@ internal fun HomeScreen(
 private fun ScreenContent(
     budget: Double,
     morale: Int,
-    alertsCount: Int,
+    legalInfractionsCount: Int,
     chats: List<ChatUiModel>,
     onSend: (String) -> Unit
 ) {
@@ -76,9 +76,9 @@ private fun ScreenContent(
                     StatsBar(
                         UserStats(
                             budget = budget,
-                            morale = morale
-                        ),
-                        unreadAlertsCount = alertsCount
+                            morale = morale,
+                            legalInfractionsCount = legalInfractionsCount
+                        )
                     )
                 }
             )
@@ -117,7 +117,7 @@ private fun HomeScreenPreview() {
     ScreenContent(
         budget = 100.0,
         morale = 100,
-        alertsCount = 0,
+        legalInfractionsCount = 0,
         chats = listOf(
             ChatUiModel(
                 sender = ChatMessageSender.AI,

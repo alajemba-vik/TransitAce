@@ -3,8 +3,8 @@ package com.alajemba.paristransitace.ui.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alajemba.paristransitace.ChatSDK
-import com.alajemba.paristransitace.ui.model.GameAlert
 import com.alajemba.paristransitace.ui.model.GameInventory
+import com.alajemba.paristransitace.ui.model.GameReport
 import com.alajemba.paristransitace.ui.model.Scenario
 import com.alajemba.paristransitace.ui.model.ScenarioOption
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,10 +26,9 @@ internal class GameViewModel(private val chatSDK: ChatSDK) : ViewModel() {
         "$index/$total"
     }
 
-    private val _alerts = MutableStateFlow(emptyList<GameAlert>())
-    val unreadAlertsCount = _alerts.asStateFlow().map { alerts ->
-        alerts.count { it.unread }
-    }
+    private val _gameReport = MutableStateFlow(GameReport.EMPTY)
+    val gameReport = _gameReport.asStateFlow()
+
 
     // TODO("move to data layer")
     fun startGame(isEnglish: Boolean) {
@@ -42,28 +41,76 @@ internal class GameViewModel(private val chatSDK: ChatSDK) : ViewModel() {
 
 
     fun nextScenario(): Boolean {
-        val currentIndex = _currentScenario.value?.currentIndexInGame ?: 0
+        val currentIndex = _currentScenario.value?.currentIndexInGame ?: -1
         val nextIndex = currentIndex + 1
 
-        _currentScenario.value = _scenariosState.value.getOrNull(nextIndex)?.copy(
+        val nextScenario = _scenariosState.value.getOrNull(nextIndex)?.copy(
             currentIndexInGame = nextIndex
         )
 
-        if (_currentScenario.value != null) {
-            _scenarioProgress.value = nextIndex.toFloat() / _scenariosState.value.size
+        if (nextScenario != null) {
+            _currentScenario.value = nextScenario
+            _scenarioProgress.value = (nextIndex.toFloat() + 1) / _scenariosState.value.size
             return true
+        } else {
+            return false
+        }
+    }
+
+    /**
+     * Calculates the final grade based on performance.
+     * Logic:
+     * - 3 Legal Infractions = Automatic F
+     * - Deep Debt (< -20) = Automatic F
+     * - Otherwise, Score = Budget + Morale - (Infractions * 20)
+     */
+    fun calculateFinalGrade(
+        budgetRemaining: Double,
+        moraleRemaining: Int,
+        legalInfractionsCount: Int
+    ){
+        // Example Start: 100 (Budget) + 30 (Morale) = 130 Points
+        val infractionPenalty = legalInfractionsCount * 20
+        val totalScore = budgetRemaining + moraleRemaining - infractionPenalty
+
+        val grade = when {
+            legalInfractionsCount >= 3 -> 'F'
+            budgetRemaining <= -20.0 -> 'F'
+            totalScore >= 120 -> 'A' // Example: €90 left, 40 Morale, 0 Infractions
+            totalScore >= 90  -> 'B' // Example: €70 left, 30 Morale, 0 Infractions
+            totalScore >= 60  -> 'C' // Example: €50 left, 20 Morale, 0 Infractions
+            totalScore >= 30  -> 'D' // Example: €20 left, 10 Morale, 1 Infraction
+            budgetRemaining >= 0 -> 'E' // Survived, but barely (Positive budget, low morale)
+            else -> 'F' // Negative budget or effectively zero score
         }
 
-        return false
+
+        _gameReport.value = GameReport(
+            grade = grade.toString(),
+            summary = getGradeDescription(grade, legalInfractionsCount),
+        )
     }
 
-    fun setAlert(message: String, title: String){
-        _alerts.value += GameAlert(title = title, message = message, unread = true)
+    private fun getGradeDescription(grade: Char, legalInfractionsCount: Int): String {
+        return when (grade) {
+            'A' -> "Incredible. You mastered the system better than a local."
+            'B' -> "Solid performance. You survived Paris with style."
+            'C' -> "You made it through, but it wasn't pretty."
+            'D' -> "Barely alive. You need a vacation from your vacation."
+            'E' -> "Technically you survived, but at what cost?"
+            'F' -> if (legalInfractionsCount >= 3) "Deported. Three strikes and you are out."
+            else "Paris chewed you up and spit you out."
+            else -> "Unknown fate."
+        }
     }
 
-    fun onOptionSelected(option: ScenarioOption) {
+    fun restartGame(isEnglish: Boolean) {
+        _currentScenario.value = null
+        _scenarioProgress.value = 0f
+        startGame(isEnglish)
 
     }
+
 
 }
 
@@ -75,7 +122,8 @@ private fun createOption(
     budgetImpact: Double = 0.0,
     moraleImpact: Int = 0,
     commentary: String = "",
-    inventory: List<GameInventory> = emptyList()
+    inventory: List<GameInventory> = emptyList(),
+    increaseLegalInfractionsBy: Int = 0
 ) =
     ScenarioOption(
         id = id,
@@ -83,7 +131,8 @@ private fun createOption(
         budgetImpact = budgetImpact,
         moraleImpact = moraleImpact,
         commentary = commentary,
-        inventory = inventory
+        inventory = inventory,
+        increaseLegalInfractionsBy = increaseLegalInfractionsBy
     )
 
 
@@ -92,7 +141,7 @@ private fun createScenario(
     title: String,
     description: String,
     options: List<ScenarioOption>,
-    correctOptionIndex: Int = 0,
+    correctOptionIndex: Int,
     nextScenarioId: String? = null
 ) = Scenario(
     id = id,
@@ -170,7 +219,7 @@ private fun buildScenarios(isFr: Boolean): List<Scenario> {
             nextScenarioId = "1_B"
         ),
 
-        // SCENARIO 1_B: The Open Gate
+        // SCENARIO 1_B: The Open Gate (INFRACTION HERE)
         createScenario(
             id = "1_B",
             title = if (isFr) "Le Portique Ouvert" else "The Open Gate",
@@ -184,7 +233,8 @@ private fun buildScenarios(isFr: Boolean): List<Scenario> {
                     text = if (isFr) "Profiter de l'ouverture (Passer sans valider)" else "Take the opening (Walk through without scanning)",
                     budgetImpact = -60.0,
                     moraleImpact = -30,
-                    commentary = if (isFr) "ERREUR FATALE ! Les contrôleurs vous arrêtent. 'Défaut de validation'. Même avec un forfait, il FAUT valider. Amende: 60€." else "FATAL ERROR! Inspectors stop you. 'Failure to validate'. Even with a pass, you MUST scan. Fine: €60."
+                    commentary = if (isFr) "ERREUR FATALE ! Les contrôleurs vous arrêtent. 'Défaut de validation'. Même avec un forfait, il FAUT valider. Amende: 60€." else "FATAL ERROR! Inspectors stop you. 'Failure to validate'. Even with a pass, you MUST scan. Fine: €60.",
+                    increaseLegalInfractionsBy = 1
                 ),
                 createOption(
                     id = "1B_SCAN",
@@ -227,7 +277,7 @@ private fun buildScenarios(isFr: Boolean): List<Scenario> {
             nextScenarioId = "3"
         ),
 
-        // SCENARIO 3: Evening Trap
+        // SCENARIO 3: Evening Trap (INFRACTION HERE)
         createScenario(
             id = "3",
             title = if (isFr) "Le Piège de la Soirée" else "The Evening Trap",
@@ -241,7 +291,8 @@ private fun buildScenarios(isFr: Boolean): List<Scenario> {
                     text = if (isFr) "Utiliser le même ticket (Correspondance)" else "Use the same ticket (Transfer)",
                     budgetImpact = -35.0,
                     moraleImpact = -20,
-                    commentary = if (isFr) "AMENDE ! Le grand piège de 2025. Pas de correspondance Rail <-> Bus avec des tickets unitaires." else "FINE! The big trap of 2025. No transfers between Rail and Bus with single tickets."
+                    commentary = if (isFr) "AMENDE ! Le grand piège de 2025. Pas de correspondance Rail <-> Bus avec des tickets unitaires." else "FINE! The big trap of 2025. No transfers between Rail and Bus with single tickets.",
+                    increaseLegalInfractionsBy = 1
                 ),
                 createOption(
                     id = "3_NEW_BUS",
@@ -369,5 +420,3 @@ private fun buildScenarios(isFr: Boolean): List<Scenario> {
         )
     )
 }
-
-private val INITIAL_INDEX = 1

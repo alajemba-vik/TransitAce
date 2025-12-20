@@ -22,8 +22,8 @@ internal class UserViewModel(private val chatSDK: ChatSDK) : ViewModel() {
         when {
              _gameSetupState.value.language == GameLanguage.UNDEFINED -> {
                  input.trim().lowercase().let { cleanedInput ->
-                     val isEnglish = cleanedInput == "english"
-                     val isFrench = cleanedInput == "french"
+                     val isEnglish = Regex("^(english|anglais|en|e|eng|engl)\$").matches(cleanedInput)
+                     val isFrench = Regex("^(français|francais|french|fr|f|fran)\$").matches(cleanedInput)
 
                      if (isEnglish || isFrench) {
                          _gameSetupState.value = gameSetupState.value.copy(
@@ -52,11 +52,12 @@ internal class UserViewModel(private val chatSDK: ChatSDK) : ViewModel() {
         }
     }
 
-    fun updateStats(budgetImpact: Double, moraleImpact: Int) {
+    fun updateStats(budgetImpact: Double, moraleImpact: Int, increaseLegalInfractionsBy: Int) {
         // Apply impacts additively: positive increases, negative decreases.
         _userStatsState.value = _userStatsState.value.copy(
             budget = _userStatsState.value.budget + budgetImpact,
-            morale = _userStatsState.value.morale + moraleImpact
+            morale = _userStatsState.value.morale + moraleImpact,
+            legalInfractionsCount = _userStatsState.value.legalInfractionsCount + increaseLegalInfractionsBy
         )
     }
 

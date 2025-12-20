@@ -18,7 +18,7 @@ val BorderGray = Color(0xFF504945)
 // The Alerts (Status)
 val AlertRed = Color(0xFFfb4934)        // Your custom Red (Brighter for dark mode)
 val CrimsonRed = Color(0xFFcc241d)
-val SuccessGreen = Color(0xFFb8bb26)    // For correct choices
+val SuccessGreen = Color(0xFF4CAF50)    // For correct choices
 val ElectricBlue = Color(0xFF83a598)    // For "System" messages (Optional but good to have)
 
 // The FX (Transparencies)

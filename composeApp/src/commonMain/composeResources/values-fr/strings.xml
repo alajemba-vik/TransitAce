@@ -23,7 +23,7 @@
     <string name="landing_official">SYSTÈME OFFICIEL</string>
     <string name="landing_build">BUILD : 2025.REFORM.V1</string>
     <string name="landing_id">ID : FR-75-IDF-001</string>
-    <string name="landing_title">PARIS TRANSIT ACE : LA COURSE IMAGINE R</string>
+    <string name="landing_title">TRANSIT ACE : PARIS, LA COURSE IMAGINE R</string>
     <string name="landing_year_changed">Nous sommes en 2025. Tout a changé :</string>
     <string name="landing_bullet1">Les tickets papier sont morts</string>
     <string name="landing_bullet1_highlight">morts</string>
@@ -36,5 +36,15 @@
     <string name="landing_guide_desc">Elle est sarcastique, cash, et votre seule chance.</string>
     <string name="landing_click_to_begin">[CLIQUER POUR COMMENCER]</string>
     <string name="landing_begin_simulation">LANCER LA SIMULATION</string>
-    <string name="landing_footer">MINISTÈRE DE L'ÉDUCATION • RÉPUBLIQUE FRANÇAISE\n• JEU ÉDUCATIF • NE PAS COLLECTER DE DONNÉES PERSONNELLES •\nÉTABLI. 2025</string>
+    <string name="landing_footer">UN JEU VIKI-J • VIVEZ VOTRE VIE\n• JEU ÉDUCATIF • NE PAS COLLECTER DE DONNÉES PERSONNELLES •\nÉTABLI EN 2025</string>
+    <string name="home_button_acc_description">Retour à l'accueil</string>
+    <string name="landing_skip_intro">PASSER L'INTRO &gt;&gt;</string>
+
+    <!-- GameOverCard (FR) -->
+    <string name="gameover_title">SIMULATION\nTERMINÉE</string>
+    <string name="gameover_subtitle">BULLETIN</string>
+    <string name="gameover_budget_label">Budget restant</string>
+    <string name="gameover_confidence_label">Niveau de confiance</string>
+    <string name="gameover_legal_label">Infractions légales</string>
+    <string name="gameover_restart_button">&gt; REDEMARER LA SIMULATION</string>
 </resources>

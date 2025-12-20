@@ -27,7 +27,6 @@ import paristransitace.composeapp.generated.resources.map
 @Composable
 fun StatsBar(
     userStats: UserStats,
-    unreadAlertsCount: Int
 ){
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -42,7 +41,7 @@ fun StatsBar(
             Divider()
             Text(userStats.morale.toString()+"%", color = RetroAmber, style = MaterialTheme.typography.labelMedium)
             Divider()
-            Text(unreadAlertsCount.toString(), color = RetroAmber, style = MaterialTheme.typography.labelMedium)
+            Text(userStats.legalInfractionsCount.toString(), color = RetroAmber, style = MaterialTheme.typography.labelMedium)
 
             Spacer(modifier = Modifier.width(Dimens.Space.small))
 

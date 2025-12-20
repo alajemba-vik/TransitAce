@@ -18,22 +18,6 @@ internal class ChatViewModel(private val chatSDK: ChatSDK) : ViewModel() {
     private val _chatMessages = MutableStateFlow(emptyList<ChatUiModel>())
     val chatMessages = _chatMessages.asStateFlow()
 
-    private val _alertsCount = MutableStateFlow(0)
-    val alertsCount = _alertsCount.asStateFlow()
-
-    /*init {
-        viewModelScope.launch {
-            chatSDK.getAllChatMessages().collect { chats ->
-                _chatMessages.value = chats.map {
-                    ChatUiModel(
-                        sender = if (it.sender == ChatMessageSender.AI.name) ChatMessageSender.AI else ChatMessageSender.USER,
-                        message = it.message
-                    )
-                }
-            }
-        }
-    }*/
-
     fun setWelcomeMessage(initialMessageFromAI: String) {
         attachNewMessage(initialMessageFromAI, ChatMessageSender.AI)
     }

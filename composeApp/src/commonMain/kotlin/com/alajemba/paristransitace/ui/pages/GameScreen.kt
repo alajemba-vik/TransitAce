@@ -6,6 +6,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
@@ -19,17 +22,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.alajemba.paristransitace.ui.components.AnimatedGameOverOverlay
 import com.alajemba.paristransitace.ui.components.StatsBar
 import com.alajemba.paristransitace.ui.components.TypewriterText
 import com.alajemba.paristransitace.ui.model.Scenario
 import com.alajemba.paristransitace.ui.model.ScenarioOption
-import com.alajemba.paristransitace.ui.model.UserStats
 import com.alajemba.paristransitace.ui.theme.AlertRed
 import com.alajemba.paristransitace.ui.theme.Dimens
 import com.alajemba.paristransitace.ui.theme.RetroAmber
+import com.alajemba.paristransitace.ui.theme.SuccessGreen
 import com.alajemba.paristransitace.ui.theme.VoidBlack
 import com.alajemba.paristransitace.ui.viewmodels.GameViewModel
 import com.alajemba.paristransitace.ui.viewmodels.UserViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import org.jetbrains.compose.resources.stringResource
 import paristransitace.composeapp.generated.resources.Res
 import paristransitace.composeapp.generated.resources.*
@@ -38,7 +44,7 @@ import paristransitace.composeapp.generated.resources.*
 internal fun GameScreen(
     gameViewModel: GameViewModel,
     userViewModel: UserViewModel,
-    onGameOver: () -> Unit
+    onNavigateHome: () -> Unit
 ) {
 
     LaunchedEffect(Unit) {
@@ -57,55 +63,75 @@ internal fun GameScreen(
             .padding(Dimens.Space.medium)
     ) {
 
-        ScreenContent(
-            currentScenario,
+        ScreenHeader(
+            scenarioTitle =  "${stringResource(Res.string.scenario).uppercase()} ${currentScenario?.id}",
             progress = gameViewModel.scenarioProgress.value,
-            progressText = gameViewModel.scenarioProgressText.collectAsState("").value,
-            unreadAlertsCount = gameViewModel.unreadAlertsCount.collectAsState(0).value,
-            userStats = userViewModel.userStatsState.value,
-            onOptionSelected = { option ->
-                gameViewModel.onOptionSelected(option)
-                userViewModel.updateStats(
-                    budgetImpact = option.budgetImpact,
-                    moraleImpact = option.moraleImpact
+            progressText =gameViewModel.scenarioProgressText.collectAsState("").value,
+            onHomeClick = onNavigateHome
+        )
+
+        StatsBar(userViewModel.userStatsState.value)
+
+        var isGameOver by remember { mutableStateOf(false) }
+
+        when {
+            !isGameOver -> {
+                ScreenContent(
+                    currentScenario,
+                    onOptionSelected = { option ->
+                        userViewModel.updateStats(
+                            budgetImpact = option.budgetImpact,
+                            moraleImpact = option.moraleImpact,
+                            increaseLegalInfractionsBy = option.increaseLegalInfractionsBy
+                        )
+                    },
+                    loadNextScenario = {
+                        if (!gameViewModel.nextScenario()) {
+                            isGameOver = true
+                            gameViewModel.calculateFinalGrade(
+                                budgetRemaining = userViewModel.userStatsState.value.budget,
+                                moraleRemaining = userViewModel.userStatsState.value.morale,
+                                legalInfractionsCount = userViewModel.userStatsState.value.legalInfractionsCount
+                            )
+                        }
+                    }
                 )
-            },
-            loadNextScenario = {
-                val isGameOver = !gameViewModel.nextScenario()
-                if (isGameOver) {
-                    onGameOver()
+            }
+            else -> {
+                with(userViewModel.userStatsState) {
+
+                    AnimatedGameOverOverlay(
+                        moneyRemaining = value.budget,
+                        moraleRemaining = value.morale,
+                        legalInfractionsCount = value.legalInfractionsCount,
+                        grade = gameViewModel.gameReport.value.grade,
+                        reason = gameViewModel.gameReport.value.summary,
+                        onRestart = {
+                            isGameOver = false
+                            gameViewModel.restartGame(userViewModel.gameSetupState.value.isEnglish)
+                        }
+                    )
                 }
             }
-        )
+        }
     }
 }
 
 @Composable
 private fun ColumnScope.ScreenContent(
     currentScenario: Scenario?,
-    progress: Float,
-    progressText: String,
-    unreadAlertsCount: Int,
-    userStats: UserStats,
     onOptionSelected: (option: ScenarioOption) -> Unit,
     loadNextScenario: () -> Unit,
 ) {
-    ScreenHeader(
-        scenarioTitle =  "${stringResource(Res.string.scenario).uppercase()} ${currentScenario?.id}",
-        progress = progress,
-        progressText = progressText
-    )
-
-    StatsBar(
-        userStats,
-        unreadAlertsCount = unreadAlertsCount
-    )
 
     if (currentScenario != null) {
 
         var lastSelection by remember(currentScenario) { mutableStateOf<ScenarioOption?>(null) }
+        val lazyListState = rememberLazyListState()
+
 
         LazyColumn(
+            state = lazyListState,
             modifier = Modifier.weight(1f).fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(Dimens.Space.medium)
         ) {
@@ -136,7 +162,7 @@ private fun ColumnScope.ScreenContent(
 
             item {
                 Text(
-                    text = stringResource(Res.string.scenario).uppercase() + ": " +
+                    text = stringResource(Res.string.log).uppercase() + ": " +
                             stringResource(Res.string.scenario).uppercase() +
                             "_${currentScenario.id}",
                     style = MaterialTheme.typography.labelSmall,
@@ -172,11 +198,26 @@ private fun ColumnScope.ScreenContent(
 
             lastSelection?.apply {
                 item {
+
+                    val autoScroll = remember { MutableSharedFlow<Unit>(extraBufferCapacity = 1) }
+
+                    LaunchedEffect(Unit) {
+
+                        autoScroll.collect {
+                            // Small delay to ensure the new line has been rendered
+                            delay(300)
+                            lazyListState.animateScrollToItem(lazyListState.layoutInfo.totalItemsCount - 1)
+                        }
+                    }
+
                     ResultCard(
                         commentary = commentary,
                         budgetImpact = budgetImpact,
                         moraleImpact = moraleImpact,
-                        onContinue = loadNextScenario
+                        onContinue = loadNextScenario,
+                        hasAddedNewLineForTypewriterText = {
+                            autoScroll.tryEmit(Unit)
+                        }
                     )
                 }
             } ?: itemsIndexed(currentScenario.options) { index, option ->
@@ -201,6 +242,7 @@ fun ScreenHeader(
     scenarioTitle: String,
     progress: Float,
     progressText: String,
+    onHomeClick: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
@@ -208,11 +250,22 @@ fun ScreenHeader(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = scenarioTitle,
-                style = MaterialTheme.typography.headlineMedium,
-                color = Color.Gray
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onHomeClick) {
+                    Icon(
+                        imageVector = Icons.Default.Home,
+                        contentDescription = stringResource(Res.string.home_button_acc_description),
+                        tint = RetroAmber
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Text(
+                    text = scenarioTitle,
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = Color.Gray
+                )
+            }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 LinearProgressIndicator(
@@ -283,7 +336,8 @@ fun ResultCard(
     commentary: String,
     budgetImpact: Double,
     moraleImpact: Int,
-    onContinue: () -> Unit
+    onContinue: () -> Unit,
+    hasAddedNewLineForTypewriterText: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -305,7 +359,8 @@ fun ResultCard(
         TypewriterText(
             text = commentary,
             style = MaterialTheme.typography.bodyLarge,
-            color = RetroAmber
+            color = RetroAmber,
+            hasAddedNewLine = hasAddedNewLineForTypewriterText
         )
 
         HorizontalDivider(color = RetroAmber.copy(alpha = 0.3f), modifier = Modifier.padding(vertical = 12.dp))
@@ -323,7 +378,7 @@ fun ResultCard(
             val moraleString = stringResource(Res.string.morale).uppercase() + (if (moraleImpact < 0) " " else " +") + "$moraleImpact"
             Text(
                 text = moraleString,
-                color = if (moraleImpact < 0) AlertRed else Color(0xFF4CAF50), // Green if good
+                color = if (moraleImpact < 0) AlertRed else SuccessGreen,
                 style = MaterialTheme.typography.labelLarge
             )
         }

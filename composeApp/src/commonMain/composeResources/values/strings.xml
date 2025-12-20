@@ -18,11 +18,12 @@
     <string name="chat_window_initial_message">Wake up! Orly isn't the Ritz. I'm Sophie. Listen to me and you might save some money. English or French?</string>
 
     <string name="landing_wake_up">Wake up.</string>
+    <string name="home_button_acc_description">Back to Home</string>
     <string name="landing_landed_desc">You just landed in Paris from Tanzania.\n20 years old. €100 in your pocket. Zero experience.</string>
     <string name="landing_official">SYSTÈME OFFICIEL</string>
     <string name="landing_build">BUILD: 2025.REFORM.V1</string>
     <string name="landing_id">ID: FR-75-IDF-001</string>
-    <string name="landing_title">PARIS TRANSIT ACE: THE IMAGINE R RACE</string>
+    <string name="landing_title">TRANSIT ACE: PARIS, THE IMAGINE R RACE</string>
     <string name="landing_year_changed">The year is 2025. Everything has changed:</string>
     <string name="landing_bullet1">Paper tickets are dead</string>
     <string name="landing_bullet1_highlight">dead</string>
@@ -35,5 +36,15 @@
     <string name="landing_guide_desc">She's sarcastic, blunt, and your only hope.</string>
     <string name="landing_click_to_begin">[CLICK TO BEGIN]</string>
     <string name="landing_begin_simulation">BEGIN SIMULATION</string>
-    <string name="landing_footer">MINISTRY OF EDUCATION • REPUBLIQUE FRANÇAISE\n• EDUCATIONAL GAME • NOT FOR COLLECTING PII •\nEST. 2025</string>
+    <string name="landing_footer">A VIKI-J GAME • LIVE LIFE\n• EDUCATIONAL GAME • NOT FOR COLLECTING PII •\nEST. 2025</string>
+    <string name="landing_skip_intro">[ SKIP INTRO >> ]</string>
+
+    <!-- GameOverCard strings -->
+    <string name="gameover_title">SIMULATION\nCONCLUDED</string>
+    <string name="gameover_subtitle">REPORT CARD</string>
+    <string name="gameover_budget_label">Budget Remaining</string>
+    <string name="gameover_confidence_label">Confidence Level</string>
+    <string name="gameover_legal_label">Legal Infractions</string>
+    <string name="gameover_restart_button">&gt; RESTART SIMULATION</string>
+
 </resources>

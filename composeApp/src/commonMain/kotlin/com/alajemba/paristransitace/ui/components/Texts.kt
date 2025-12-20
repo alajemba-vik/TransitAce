@@ -18,7 +18,8 @@ fun TypewriterText(
     style: TextStyle,
     color: Color,
     modifier: Modifier = Modifier,
-    delayMillis: Long = 30
+    delayMillis: Long = 30,
+    hasAddedNewLine: () -> Unit = {}
 ) {
     var displayedText by remember { mutableStateOf("") }
 
@@ -30,10 +31,21 @@ fun TypewriterText(
         }
     }
 
+    var lastLineCount by remember { mutableStateOf<Int?>(null) }
+
     Text(
         text = displayedText,
         style = style,
         color = color,
-        modifier = modifier
+        modifier = modifier,
+        onTextLayout = { textLayoutResult ->
+
+            val currentLineCount = textLayoutResult.lineCount
+
+            if (lastLineCount != textLayoutResult.lineCount){
+                lastLineCount = currentLineCount
+                hasAddedNewLine()
+            }
+        }
     )
 }

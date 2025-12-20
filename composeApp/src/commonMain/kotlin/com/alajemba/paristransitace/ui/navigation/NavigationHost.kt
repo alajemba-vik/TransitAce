@@ -27,7 +27,14 @@ fun AppNavHost() {
         composable<LandingRoute> {
             LandingScreen(
                 onStartGame = {
-                    navController.navigate(HomeRoute)
+                    navController.navigate(
+                        if (userViewModel.gameSetupState.value.isSetupComplete) GameRoute else HomeRoute
+                    ) {
+                        popUpTo(LandingRoute) {
+                            inclusive = true
+                        }
+                    }
+
                 }
             )
         }
@@ -37,7 +44,11 @@ fun AppNavHost() {
                 chatViewModel = chatViewModel,
                 userViewModel = userViewModel,
                 onStartGame = {
-                    navController.navigate(GameRoute)
+                    navController.navigate(GameRoute) {
+                        popUpTo(HomeRoute) {
+                            inclusive = true
+                        }
+                    }
                 }
             )
         }
@@ -46,7 +57,13 @@ fun AppNavHost() {
             GameScreen(
                 userViewModel = userViewModel,
                 gameViewModel = koinViewModel(),
-                onGameOver = { }
+                onNavigateHome = {
+                    navController.navigate(LandingRoute) {
+                        popUpTo(LandingRoute) {
+                            inclusive = true
+                        }
+                    }
+                }
             )
         }
     }
