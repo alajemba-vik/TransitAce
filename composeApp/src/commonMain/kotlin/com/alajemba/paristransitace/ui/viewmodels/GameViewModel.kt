@@ -2,9 +2,12 @@ package com.alajemba.paristransitace.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.alajemba.paristransitace.ChatSDK
+import com.alajemba.paristransitace.TransitAceSDK
+import com.alajemba.paristransitace.ui.model.UIDataState
 import com.alajemba.paristransitace.ui.model.GameInventory
 import com.alajemba.paristransitace.ui.model.GameReport
+import com.alajemba.paristransitace.ui.model.GameSetup
+import com.alajemba.paristransitace.ui.model.GameSetup.GameLanguage
 import com.alajemba.paristransitace.ui.model.Scenario
 import com.alajemba.paristransitace.ui.model.ScenarioOption
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,7 +15,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
-internal class GameViewModel(private val chatSDK: ChatSDK) : ViewModel() {
+internal class GameViewModel(private val transitAceSDK: TransitAceSDK) : ViewModel() {
+
+    private val _uiDataState = MutableStateFlow<UIDataState>(UIDataState.Loading)
+    val gameDataState = _uiDataState.asStateFlow()
+
     private val _scenariosState = MutableStateFlow(emptyList<Scenario>())
 
     private val _currentScenario = MutableStateFlow<Scenario?>(null)
@@ -29,14 +36,48 @@ internal class GameViewModel(private val chatSDK: ChatSDK) : ViewModel() {
     private val _gameReport = MutableStateFlow(GameReport.EMPTY)
     val gameReport = _gameReport.asStateFlow()
 
+    // To persist last used custom transit rules between games
+    private var lastUsedTransitRulesJson : String? = null
 
     // TODO("move to data layer")
-    fun startGame(isEnglish: Boolean) {
-        viewModelScope.launch {
-            _scenariosState.value = buildScenarios(!isEnglish)
+    fun generateScenarios(gameSetup: GameSetup, transitRulesJson: String? = null){
 
-            nextScenario()
+        _uiDataState.value = UIDataState.Loading
+
+        lastUsedTransitRulesJson = transitRulesJson ?: lastUsedTransitRulesJson
+
+        val isEnglish = gameSetup.isEnglish
+        val isCustom = gameSetup.isCustomSimulation
+
+        viewModelScope.launch {
+
+            if (isCustom){
+                val aIScenariosResponse = transitAceSDK.generateScenarios(
+                    transitRulesJson = transitRulesJson ?: "",
+                    language = if (isEnglish) GameLanguage.ENGLISH else GameLanguage.FRENCH
+                )
+
+                if (aIScenariosResponse.data != null) {
+                    _scenariosState.value = aIScenariosResponse.data
+                } else {
+                    _scenariosState.value = emptyList()
+                }
+            } else {
+                _scenariosState.value = buildDefaultScenarios(!isEnglish)
+            }
+
+            _uiDataState.value =  if (_scenariosState.value.isNotEmpty()) {
+                UIDataState.Success.ScenariosGenerated
+            } else {
+                UIDataState.Error.AIError
+            }
         }
+    }
+
+    fun startGame() {
+        _currentScenario.value = null
+        _scenarioProgress.value = 0f
+        nextScenario()
     }
 
 
@@ -104,13 +145,6 @@ internal class GameViewModel(private val chatSDK: ChatSDK) : ViewModel() {
         }
     }
 
-    fun restartGame(isEnglish: Boolean) {
-        _currentScenario.value = null
-        _scenarioProgress.value = 0f
-        startGame(isEnglish)
-
-    }
-
 
 }
 
@@ -141,19 +175,19 @@ private fun createScenario(
     title: String,
     description: String,
     options: List<ScenarioOption>,
-    correctOptionIndex: Int,
+    correctOptionID: String,
     nextScenarioId: String? = null
 ) = Scenario(
     id = id,
     title = title,
     description = description,
     options = options,
-    correctOptionId = correctOptionIndex,
+    correctOptionId = correctOptionID,
     nextScenarioId = nextScenarioId
 )
 
 
-private fun buildScenarios(isFr: Boolean): List<Scenario> {
+fun buildDefaultScenarios(isFr: Boolean): List<Scenario> {
     return listOf(
         // SCENARIO 0: Morning in Orly
         createScenario(
@@ -187,7 +221,7 @@ private fun buildScenarios(isFr: Boolean): List<Scenario> {
                     inventory = listOf(GameInventory("hasWeeklyPass", "Navigo Découverte Weekly pass", ""))
                 )
             ),
-            correctOptionIndex = 1,
+            correctOptionID = "0_APP",
             nextScenarioId = "1"
         ),
 
@@ -215,7 +249,7 @@ private fun buildScenarios(isFr: Boolean): List<Scenario> {
                     commentary = if (isFr) "Rapide et automatique." else "Fast and automated."
                 )
             ),
-            correctOptionIndex = 1,
+            correctOptionID = "",
             nextScenarioId = "1_B"
         ),
 
@@ -244,7 +278,7 @@ private fun buildScenarios(isFr: Boolean): List<Scenario> {
                     commentary = if (isFr) "Bip. Vous passez légalement. Les contrôleurs sourient à la personne derrière vous qui a essayé de frauder." else "Beep. You pass legally. The inspectors smile at the person behind you who tried to jump it."
                 )
             ),
-            correctOptionIndex = 1,
+            correctOptionID = "1B_SCAN",
             nextScenarioId = "2"
         ),
 
@@ -273,7 +307,7 @@ private fun buildScenarios(isFr: Boolean): List<Scenario> {
                     commentary = if (isFr) "Sophie rit. 'Les cartons c'est fini mon chou !' Vous perdez du temps." else "Sophie laughs. 'Cardboard is dead, darling!' You waste time."
                 )
             ),
-            correctOptionIndex = 0,
+            correctOptionID = "2_WATCH",
             nextScenarioId = "3"
         ),
 
@@ -302,7 +336,7 @@ private fun buildScenarios(isFr: Boolean): List<Scenario> {
                     commentary = if (isFr) "(Inclus dans votre Navigo si vous l'avez) Second paiement accepté. Rail et Bus sont séparés maintenant." else "(Included in your Navigo if you have it) Second payment accepted. Rail and Bus are separate worlds now."
                 )
             ),
-            correctOptionIndex = 1,
+            correctOptionID = "3_NEW_BUS",
             nextScenarioId = "4_B"
         ),
 
@@ -330,7 +364,7 @@ private fun buildScenarios(isFr: Boolean): List<Scenario> {
                     commentary = if (isFr) "C'est le même prix (2,50€) ! Mais le métro s'arrête partout. Vous arrivez en retard." else "It's the same price (€2.50)! But the metro stops everywhere. You arrive late."
                 )
             ),
-            correctOptionIndex = 0,
+            correctOptionID ="4B_RER",
             nextScenarioId = "4"
         ),
 
@@ -358,7 +392,7 @@ private fun buildScenarios(isFr: Boolean): List<Scenario> {
                     commentary = if (isFr) "Victoire ! Le ticket à 2,50€ (ou votre Navigo) vous emmène PARTOUT en Île-de-France. Versailles, Disney..." else "Victory! The €2.50 ticket (or your Navigo) takes you ANYWHERE in Ile-de-France. Versailles, Disney..."
                 )
             ),
-            correctOptionIndex = 1,
+            correctOptionID = "4_STANDARD",
             nextScenarioId = "5"
         ),
 
@@ -387,7 +421,7 @@ private fun buildScenarios(isFr: Boolean): List<Scenario> {
                     commentary = if (isFr) "Dommage. Imagine R est imbattable pour les étudiants. Vous paierez plus cher à la longue." else "Too bad. Imagine R is unbeatable for students. You'll pay more in the long run."
                 )
             ),
-            correctOptionIndex = 0,
+            correctOptionID = "5_SUB",
             nextScenarioId = "6"
         ),
 
@@ -415,8 +449,9 @@ private fun buildScenarios(isFr: Boolean): List<Scenario> {
                     commentary = if (isFr) "Correct. Sans forfait, c'est 13€ tarif unique. Vous évitez l'amende." else "Correct. Without a pass, it's €13 flat. You avoid the fine."
                 )
             ),
-            correctOptionIndex = 1,
+            correctOptionID = "6_NO",
             nextScenarioId = null
         )
     )
 }
+

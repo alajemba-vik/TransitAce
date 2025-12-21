@@ -16,7 +16,6 @@
     <string name="game_screen_scenario_options_description">Available Actions</string>
     <string name="chat_window_provide_language_instruction">[ TYPE 'ENGLISH' OR 'FRENCH' ABOVE ]</string>
     <string name="chat_window_initial_message">Wake up! Orly isn't the Ritz. I'm Sophie. Listen to me and you might save some money. English or French?</string>
-
     <string name="landing_wake_up">Wake up.</string>
     <string name="home_button_acc_description">Back to Home</string>
     <string name="landing_landed_desc">You just landed in Paris from Tanzania.\n20 years old. €100 in your pocket. Zero experience.</string>

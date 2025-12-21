@@ -1,0 +1,236 @@
+{
+  "lastUpdated": "2025-01-01",
+  "tickets": {
+    "metroTrainRer": {
+      "name": "Metro-Train-RER Ticket",
+      "price": 2.50,
+      "reducedPrice": 1.25,
+      "validity": "120 minutes",
+      "validOn": ["metro", "rer", "transilien", "tram_t11_t13"],
+      "zones": "all (1-5, excluding airports)",
+      "transferRules": "Free transfers within validity period on same modes"
+    },
+    "busTram": {
+      "name": "Bus-Tram Ticket",
+      "price": 2.00,
+      "reducedPrice": 1.00,
+      "validity": "90 minutes",
+      "validOn": ["bus", "tram_t1_t10", "noctilien"],
+      "zones": "all (1-5)",
+      "transferRules": "Free bus-to-bus or tram-to-tram transfers within validity"
+    },
+    "airportTicket": {
+      "name": "Paris Region <> Airports",
+      "price": 13.00,
+      "reducedPrice": 6.50,
+      "validity": "Single journey",
+      "validOn": ["metro", "rer", "train", "orlyval"],
+      "zones": "all including CDG and Orly",
+      "notes": "Not valid on RoissyBus. Can use to transfer between airports."
+    }
+  },
+
+  "passes": {
+    "navigoDecouverte": {
+      "cardCost": 5.00,
+      "refundable": false,
+      "requiresPhoto": true,
+      "personalUse": true,
+      "types": {
+        "weekly": {
+          "price": 31.60,
+          "validity": "Monday-Sunday",
+          "purchaseWindow": "Friday before through Thursday of current week",
+          "zones": "1-5 (all)",
+          "includesAirports": true
+        },
+        "monthly": {
+          "price": 88.80,
+          "validity": "Calendar month (1st-last day)",
+          "zones": "1-5 (all)",
+          "includesAirports": true
+        },
+        "daily": {
+          "price": 12.00,
+          "validity": "One calendar day (midnight-midnight)",
+          "zones": "1-5 (all)",
+          "includesAirports": true
+        }
+      }
+    },
+    "navigoLibertePlus": {
+      "perTripCost": {
+        "metroTrainRer": 1.99,
+        "busTram": 1.60,
+        "reduced": {
+          "metroTrainRer": 0.99,
+          "busTram": 0.80
+        }
+      },
+      "dailyCap": 12.00,
+      "notes": "Pay-as-you-go, billed at end of month. Free connections between metro/RER and bus/tram"
+    },
+    "parisVisite": {
+      "prices": {
+        "1day": 29.90,
+        "2day": 44.45,
+        "3day": 62.30,
+        "5day": 76.25
+      },
+      "zones": "1-5 including airports",
+      "validOn": "all modes including Orlyval, RoissyBus, Orlybus",
+      "personalUse": true,
+      "notes": "Loaded on Navigo Easy or smartphone"
+    }
+  },
+
+  "fines": {
+    "current": {
+      "noTicket": {
+        "immediate": 50.00,
+        "later": 100.00,
+        "discount20days": 20.00
+      },
+      "validFrom": "2024-01-01",
+      "validUntil": "2025-06-01"
+    },
+    "upcoming": {
+      "noTicket": {
+        "immediate": 70.00,
+        "later": 120.00,
+        "discount20days": 20.00
+      },
+      "validFrom": "2025-06-02",
+      "notes": "20€ increase effective June 2, 2025"
+    },
+    "violations": {
+      "noTicket": "No valid ticket or pass",
+      "notValidated": "Ticket not validated on bus/tram",
+      "wrongZone": "Ticket not valid for zone traveled",
+      "transferredPass": "Using someone else's personal pass (Navigo)",
+      "noPhotoOnNavigo": "Navigo pass without required photo",
+      "expiredPass": "Expired weekly/monthly pass"
+    },
+    "additionalFines": {
+      "smoking": 150.00,
+      "feet on seats": 150.00,
+      "excessive noise": 150.00,
+      "unauthorized photos": 150.00,
+      "begging": 150.00
+    }
+  },
+
+  "zones": {
+    "zone1": {
+      "description": "Central Paris (arrondissements 1-20)",
+      "landmarks": ["Eiffel Tower", "Louvre", "Notre-Dame", "Arc de Triomphe", "Sacré-Cœur"]
+    },
+    "zone2": {
+      "description": "Inner suburbs",
+      "areas": ["Hauts-de-Seine", "Seine-Saint-Denis", "Val-de-Marne"],
+      "landmarks": ["Boulogne-Billancourt", "Issy-les-Moulineaux", "Montrouge", "Ivry", "Aubervilliers"]
+    },
+    "zone3": {
+      "description": "Surrounding inner suburbs",
+      "landmarks": ["Asnières", "Saint-Cloud", "Saint-Denis", "Courbevoie", "La Défense"]
+    },
+    "zone4": {
+      "description": "Outer suburbs",
+      "landmarks": ["Versailles", "Orly Airport (special fare)"]
+    },
+    "zone5": {
+      "description": "Greater Île-de-France region",
+      "landmarks": ["Charles de Gaulle Airport (special fare)", "Disneyland Paris"]
+    }
+  },
+
+  "validationRules": {
+    "metro": {
+      "validate": "At turnstile entry only",
+      "exitValidation": false,
+      "notes": "Keep ticket until exit in case of inspection"
+    },
+    "rer": {
+      "validate": "At entry turnstile",
+      "exitValidation": true,
+      "notes": "Must validate both entering and exiting RER stations. Ticket checked at exit for zone validity"
+    },
+    "bus": {
+      "validate": "On board when entering",
+      "exitValidation": false,
+      "notes": "Hold device/card to validator. Cannot board without validating"
+    },
+    "tram": {
+      "validate": "Platform validators before boarding",
+      "exitValidation": false,
+      "notes": "Honor system but frequent inspections"
+    }
+  },
+
+  "importantChanges2025": [
+    "Paper tickets (t+) being phased out - old ones still usable",
+    "Fare zones abolished for most tickets - flat rate across all zones 1-5",
+    "Metro-Train-RER ticket replaces old t+ for trains",
+    "Separate Bus-Tram ticket introduced",
+    "Cannot load incompatible tickets on same card (Metro-Train-RER + Airport ticket)",
+    "Navigo Jeunes Weekend pass discontinued",
+    "All fares now contactless - Navigo Easy, smartphone, or Navigo Découverte"
+  ],
+
+  "reducedFareEligibility": [
+    "Children aged 4-10 years",
+    "Solidarité Transport pass holders",
+    "Large family card holders (valid in Île-de-France)",
+    "Disability card (CMI) holders",
+    "ONAC cardholders (war veterans)",
+    "Companions of disabled passengers"
+  ],
+
+  "commonMistakes": [
+    {
+      "mistake": "Using wrong ticket type for mode",
+      "example": "Using Bus-Tram ticket on metro",
+      "consequence": "€70 fine (€120 if not paid immediately)"
+    },
+    {
+      "mistake": "Not validating on bus/tram",
+      "example": "Boarding bus without tapping card",
+      "consequence": "€70 fine even with valid pass"
+    },
+    {
+      "mistake": "Transferring between metro and bus with single ticket",
+      "example": "Metro ticket doesn't allow bus transfer",
+      "consequence": "Need two separate tickets or use Navigo pass"
+    },
+    {
+      "mistake": "No photo on Navigo Découverte",
+      "example": "Card must have photo attached",
+      "consequence": "€70 fine, card confiscated"
+    },
+    {
+      "mistake": "Loading incompatible tickets",
+      "example": "Metro-Train-RER + Airport ticket on same card",
+      "consequence": "One ticket will be invalid, risk of fine"
+    },
+    {
+      "mistake": "Expired weekly pass on wrong week",
+      "example": "Navigo Weekly valid Monday-Sunday only",
+      "consequence": "€70 fine if used outside validity"
+    }
+  ],
+
+  "scenarioConstraints": {
+    "budget": {
+      "veryLow": "Under €20",
+      "low": "€20-50",
+      "medium": "€50-100",
+      "comfortable": "€100+"
+    },
+    "tripTypes": {
+      "airport": "CDG or Orly requires special €13 ticket OR Navigo pass",
+      "versailles": "Zone 4, covered by standard ticket or Navigo",
+      "disneyland": "Zone 5, covered by standard ticket or Navigo",
+      "centralParis": "Any ticket works, zones irrelevant"
+    }
+  }
+}

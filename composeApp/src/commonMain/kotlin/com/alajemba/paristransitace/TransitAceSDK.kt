@@ -7,11 +7,13 @@ import com.alajemba.paristransitace.entity.ChatMessageEntity
 import com.alajemba.paristransitace.network.LLMApi
 import com.alajemba.paristransitace.network.models.ApiResponse
 import com.alajemba.paristransitace.ui.model.ChatMessageSender
+import com.alajemba.paristransitace.ui.model.GameSetup.GameLanguage
+import com.alajemba.paristransitace.ui.model.Scenario
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Clock
 
-internal class ChatSDK(
+internal class TransitAceSDK(
     private val database: ParisTransitDatabase,
     private val llmApi: LLMApi
 ) {
@@ -55,6 +57,13 @@ internal class ChatSDK(
         )
 
         return response
+    }
+
+    suspend fun generateScenarios(transitRulesJson: String, language: GameLanguage): ApiResponse<List<Scenario>> {
+        return llmApi.generateScenario(
+            transitRulesJson = transitRulesJson,
+            language = language
+        )
     }
 
 

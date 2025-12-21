@@ -1,0 +1,237 @@
+{
+  "lastUpdated": "2025-01-01",
+  "tickets": {
+    "metroTrainRer": {
+      "name": "Ticket Métro-Train-RER",
+      "price": 2.50,
+      "reducedPrice": 1.25,
+      "validity": "120 minutes",
+      "validOn": ["metro", "rer", "transilien", "tram_t11_t13"],
+      "zones": "toutes (1-5, hors aéroports)",
+      "transferRules": "Correspondances gratuites pendant la période de validité sur les mêmes modes"
+    },
+    "busTram": {
+      "name": "Ticket Bus-Tram",
+      "price": 2.00,
+      "reducedPrice": 1.00,
+      "validity": "90 minutes",
+      "validOn": ["bus", "tram_t1_t10", "noctilien"],
+      "zones": "toutes (1-5)",
+      "transferRules": "Correspondances bus→bus ou tram→tram gratuites pendant la validité"
+    },
+    "airportTicket": {
+      "name": "Région Paris <> Aéroports",
+      "price": 13.00,
+      "reducedPrice": 6.50,
+      "validity": "Trajet simple",
+      "validOn": ["metro", "rer", "train", "orlyval"],
+      "zones": "toutes, y compris CDG et Orly",
+      "notes": "Non valable sur RoissyBus. Peut être utilisé pour transférer entre aéroports."
+    }
+  },
+
+  "passes": {
+    "navigoDecouverte": {
+      "cardCost": 5.00,
+      "refundable": false,
+      "requiresPhoto": true,
+      "personalUse": true,
+      "types": {
+        "weekly": {
+          "price": 31.60,
+          "validity": "Lundi-Dimanche",
+          "purchaseWindow": "Vendredi précédent jusqu'au jeudi de la semaine en cours",
+          "zones": "1-5 (toutes)",
+          "includesAirports": true
+        },
+        "monthly": {
+          "price": 88.80,
+          "validity": "Mois calendaire (1er - dernier jour)",
+          "zones": "1-5 (toutes)",
+          "includesAirports": true
+        },
+        "daily": {
+          "price": 12.00,
+          "validity": "Un jour calendaire (minuit-minuit)",
+          "zones": "1-5 (toutes)",
+          "includesAirports": true
+        }
+      }
+    },
+    "navigoLibertePlus": {
+      "perTripCost": {
+        "metroTrainRer": 1.99,
+        "busTram": 1.60,
+        "reduced": {
+          "metroTrainRer": 0.99,
+          "busTram": 0.80
+        }
+      },
+      "dailyCap": 12.00,
+      "notes": "Paiement à l'utilisation, facturation en fin de mois. Connexions gratuites entre métro/RER et bus/tram"
+    },
+    "parisVisite": {
+      "prices": {
+        "1day": 29.90,
+        "2day": 44.45,
+        "3day": 62.30,
+        "5day": 76.25
+      },
+      "zones": "1-5 incluant les aéroports",
+      "validOn": "tous les modes y compris Orlyval, RoissyBus, Orlybus",
+      "personalUse": true,
+      "notes": "Chargé sur Navigo Easy ou smartphone"
+    }
+  },
+
+  "fines": {
+    "current": {
+      "noTicket": {
+        "immediate": 50.00,
+        "later": 100.00,
+        "discount20days": 20.00
+      },
+      "validFrom": "2024-01-01",
+      "validUntil": "2025-06-01"
+    },
+    "upcoming": {
+      "noTicket": {
+        "immediate": 70.00,
+        "later": 120.00,
+        "discount20days": 20.00
+      },
+      "validFrom": "2025-06-02",
+      "notes": "Augmentation de 20€ effective le 2 juin 2025"
+    },
+    "violations": {
+      "noTicket": "Pas de titre de transport valide",
+      "notValidated": "Titre non validé dans le bus/tram",
+      "wrongZone": "Titre non valide pour la zone parcourue",
+      "transferredPass": "Utilisation du pass personnel d'une autre personne (Navigo)",
+      "noPhotoOnNavigo": "Pass Navigo sans photo requise",
+      "expiredPass": "Pass hebdomadaire/mensuel expiré"
+    },
+    "additionalFines": {
+      "smoking": 150.00,
+      "feet on seats": 150.00,
+      "excessive noise": 150.00,
+      "unauthorized photos": 150.00,
+      "begging": 150.00
+    }
+  },
+
+  "zones": {
+    "zone1": {
+      "description": "Paris centre (arrondissements 1-20)",
+      "landmarks": ["Tour Eiffel", "Louvre", "Notre-Dame", "Arc de Triomphe", "Sacré-Cœur"]
+    },
+    "zone2": {
+      "description": "Petite couronne",
+      "areas": ["Hauts-de-Seine", "Seine-Saint-Denis", "Val-de-Marne"],
+      "landmarks": ["Boulogne-Billancourt", "Issy-les-Moulineaux", "Montrouge", "Ivry", "Aubervilliers"]
+    },
+    "zone3": {
+      "description": "Banlieues proches",
+      "landmarks": ["Asnières", "Saint-Cloud", "Saint-Denis", "Courbevoie", "La Défense"]
+    },
+    "zone4": {
+      "description": "Banlieues extérieures",
+      "landmarks": ["Versailles", "Aéroport d'Orly (tarif spécial)"]
+    },
+    "zone5": {
+      "description": "Grande région Île-de-France",
+      "landmarks": ["Aéroport Charles-de-Gaulle (tarif spécial)", "Disneyland Paris"]
+    }
+  },
+
+  "validationRules": {
+    "metro": {
+      "validate": "À valider au tourniquet à l'entrée uniquement",
+      "exitValidation": false,
+      "notes": "Conserver le titre jusqu'à la sortie en cas de contrôle"
+    },
+    "rer": {
+      "validate": "Valider au tourniquet d'entrée",
+      "exitValidation": true,
+      "notes": "Valider à l'entrée et à la sortie des stations RER. Le titre peut être contrôlé à la sortie pour la validité zonale"
+    },
+    "bus": {
+      "validate": "À valider à bord lors de la montée",
+      "exitValidation": false,
+      "notes": "Passer l'appareil/carte sur le valideur. Impossible de monter sans validation"
+    },
+    "tram": {
+      "validate": "Valideurs sur le quai avant l'embarquement",
+      "exitValidation": false,
+      "notes": "Système d'honneur mais contrôles fréquents"
+    }
+  },
+
+  "importantChanges2025": [
+    "Les billets papier (t+) sont en cours de suppression - les anciens restent utilisables",
+    "Abolition des zones tarifaires pour la plupart des titres - tarif unique sur les zones 1-5",
+    "Le ticket Métro-Train-RER remplace l'ancien t+ pour les trains",
+    "Introduction d'un ticket séparé Bus-Tram",
+    "Impossible de charger des titres incompatibles sur la même carte (Métro-Train-RER + ticket Aéroport)",
+    "Le pass Navigo Jeunes Weekend est supprimé",
+    "Tous les paiements sont maintenant sans contact - Navigo Easy, smartphone ou Navigo Découverte"
+  ],
+
+  "reducedFareEligibility": [
+    "Enfants de 4 à 10 ans",
+    "Bénéficiaires du pass Solidarité Transport",
+    "Titulaire de la carte famille nombreuse (valide en Île-de-France)",
+    "Titulaire d'une carte d'invalidité (CMI)",
+    "Titulaire de la carte ONAC (anciens combattants)",
+    "Accompagnants de personnes handicapées"
+  ],
+
+  "commonMistakes": [
+    {
+      "mistake": "Utilisation d'un mauvais type de titre pour le mode",
+      "example": "Utiliser un ticket Bus-Tram dans le métro",
+      "consequence": "Amende de 70 € (120 € si non payée immédiatement)"
+    },
+    {
+      "mistake": "Ne pas valider dans le bus/tram",
+      "example": "Monter dans le bus sans passer la carte",
+      "consequence": "Amende de 70 € même avec un pass valide"
+    },
+    {
+      "mistake": "Correspondance métro→bus avec un ticket unitaire",
+      "example": "Le ticket métro n'autorise pas le transfert vers le bus",
+      "consequence": "Nécessite deux tickets séparés ou un pass Navigo"
+    },
+    {
+      "mistake": "Pas de photo sur Navigo Découverte",
+      "example": "La carte doit comporter une photo",
+      "consequence": "Amende de 70 €, carte confisquée"
+    },
+    {
+      "mistake": "Chargement de titres incompatibles",
+      "example": "Métro-Train-RER + ticket Aéroport sur la même carte",
+      "consequence": "Un titre sera invalide, risque d'amende"
+    },
+    {
+      "mistake": "Pass hebdomadaire expiré hors période",
+      "example": "Navigo Weekly valable seulement du lundi au dimanche",
+      "consequence": "Amende de 70 € si utilisé hors validité"
+    }
+  ],
+
+  "scenarioConstraints": {
+    "budget": {
+      "veryLow": "Moins de 20 €",
+      "low": "20 €-50 €",
+      "medium": "50 €-100 €",
+      "comfortable": "100 €+"
+    },
+    "tripTypes": {
+      "airport": "CDG ou Orly requièrent un ticket spécial de 13 € OU un pass Navigo",
+      "versailles": "Zone 4, couvert par un ticket standard ou Navigo",
+      "disneyland": "Zone 5, couvert par un ticket standard ou Navigo",
+      "centralParis": "Tout ticket fonctionne, les zones sont sans importance"
+    }
+  }
+}
+

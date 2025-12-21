@@ -8,10 +8,10 @@ import com.alajemba.paristransitace.ui.pages.GameScreen
 import com.alajemba.paristransitace.ui.pages.HomeScreen
 import com.alajemba.paristransitace.ui.pages.LandingScreen
 import com.alajemba.paristransitace.ui.viewmodels.ChatViewModel
+import com.alajemba.paristransitace.ui.viewmodels.GameViewModel
 import com.alajemba.paristransitace.ui.viewmodels.UserViewModel
 import kotlinx.serialization.Serializable
 import org.koin.compose.viewmodel.koinViewModel
-import org.koin.compose.viewmodel.sharedKoinViewModel
 
 
 @Composable
@@ -19,6 +19,7 @@ fun AppNavHost() {
     val navController = rememberNavController()
     val userViewModel = koinViewModel<UserViewModel>()
     val chatViewModel = koinViewModel<ChatViewModel>()
+    val gameViewModel = koinViewModel<GameViewModel>()
 
     NavHost(
         navController = navController,
@@ -43,6 +44,7 @@ fun AppNavHost() {
             HomeScreen(
                 chatViewModel = chatViewModel,
                 userViewModel = userViewModel,
+                gameViewModel = gameViewModel,
                 onStartGame = {
                     navController.navigate(GameRoute) {
                         popUpTo(HomeRoute) {
@@ -56,7 +58,10 @@ fun AppNavHost() {
         composable<GameRoute> {
             GameScreen(
                 userViewModel = userViewModel,
-                gameViewModel = koinViewModel(),
+                gameViewModel = gameViewModel,
+                onReset = {
+
+                },
                 onNavigateHome = {
                     navController.navigate(LandingRoute) {
                         popUpTo(LandingRoute) {

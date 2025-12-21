@@ -20,6 +20,10 @@ ktor = "3.3.3"
 sqlDelight = "2.2.1"
 # for DI
 koin = "4.1.1"
+# for Koog AI integration
+koog = "0.5.4"
+# Fix for datetime compatibility issues in Koog
+dateTime = "0.7.1-0.6.x-compat"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -51,8 +55,9 @@ koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", versi
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 # Koin ViewModel support with Compose Navigation
 koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel-navigation", version.ref = "koin" }
-
-
+# AI Integration
+koog-agents = { module = "ai.koog:koog-agents", version.ref = "koog" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "dateTime" }
 
 
 [plugins]

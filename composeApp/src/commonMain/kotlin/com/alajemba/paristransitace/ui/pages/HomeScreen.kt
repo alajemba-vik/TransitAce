@@ -16,10 +16,14 @@ import com.alajemba.paristransitace.ui.components.StatsBar
 import com.alajemba.paristransitace.ui.model.AIStatus
 import com.alajemba.paristransitace.ui.model.ChatMessageSender
 import com.alajemba.paristransitace.ui.model.ChatUiModel
+import com.alajemba.paristransitace.ui.model.GameSetup
+import com.alajemba.paristransitace.ui.model.UIDataState
 import com.alajemba.paristransitace.ui.model.UserStats
 import com.alajemba.paristransitace.ui.viewmodels.ChatViewModel
+import com.alajemba.paristransitace.ui.viewmodels.GameViewModel
 import com.alajemba.paristransitace.ui.viewmodels.UserViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import paristransitace.composeapp.generated.resources.Res
@@ -31,6 +35,7 @@ import paristransitace.composeapp.generated.resources.disconnected
 @Composable
 internal fun HomeScreen(
     chatViewModel: ChatViewModel,
+    gameViewModel: GameViewModel,
     onStartGame: () -> Unit,
     userViewModel: UserViewModel,
 ) {
@@ -40,10 +45,39 @@ internal fun HomeScreen(
     LaunchedEffect(Unit) {
         chatViewModel.setWelcomeMessage(welcomeMessage)
 
-        userViewModel.gameSetupState.collect { state ->
-            if (state.isSetupComplete) {
-                delay(3000L)
-                onStartGame()
+        launch {
+            userViewModel.gameSetupState.collect { gameSetupState ->
+                when {
+                    gameSetupState.isOnScenariosGenerationStep -> {
+                        var transiteRulesFile: String? = null
+
+                        if (gameSetupState.isCustomSimulation) {
+                            transiteRulesFile = Res.readBytes("files/transit_rules.json").decodeToString()
+                        }
+
+                        gameViewModel.generateScenarios(gameSetupState, transiteRulesFile)
+                    }
+
+                    gameSetupState.isOnScenariosGenerationFailureStep -> {
+                        chatViewModel.setupGame(gameSetupState)
+                    }
+
+                    gameSetupState.isSetupComplete -> {
+                        chatViewModel.setupGame(gameSetupState)
+                        delay(3000L)
+                        onStartGame()
+                    }
+                }
+            }
+        }
+
+        launch {
+            gameViewModel.gameDataState.collect { gameDataValue ->
+                if (gameDataValue is UIDataState.Success.ScenariosGenerated) {
+                    userViewModel.setupGame(scenariosGenerationStatus = GameSetup.ScenarioGenerationStatus.SUCCESS)
+                } else if (gameDataValue is UIDataState.Error) {
+                    userViewModel.setupGame(scenariosGenerationStatus = GameSetup.ScenarioGenerationStatus.FAILURE)
+                }
             }
         }
     }
@@ -56,7 +90,9 @@ internal fun HomeScreen(
         onSend = { message ->
             chatViewModel.attachNewMessage(message, ChatMessageSender.USER)
             chatViewModel.setupGame(userViewModel.setupGame(message))
-        }
+        },
+        isNewMessageEnabled = !userViewModel.gameSetupState.collectAsState().value.isSetupComplete &&
+        !chatViewModel.isLoading.collectAsState(false).value
     )
 }
 
@@ -67,7 +103,8 @@ private fun ScreenContent(
     morale: Int,
     legalInfractionsCount: Int,
     chats: List<ChatUiModel>,
-    onSend: (String) -> Unit
+    onSend: (String) -> Unit,
+    isNewMessageEnabled: Boolean = true
 ) {
     Scaffold(
         topBar =  {
@@ -88,7 +125,8 @@ private fun ScreenContent(
         AIChatWindow(
             chatMessages = chats,
             onSend = onSend,
-            modifier = Modifier.padding(it)
+            modifier = Modifier.padding(it),
+            isNewMessageEnabled = isNewMessageEnabled
         )
 
     }

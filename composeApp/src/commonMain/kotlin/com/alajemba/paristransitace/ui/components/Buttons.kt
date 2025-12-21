@@ -37,9 +37,13 @@ import paristransitace.composeapp.generated.resources.reply_ellipsis
 import paristransitace.composeapp.generated.resources.send
 
 @Composable
-fun ActionButton(onSend: () -> Unit) {
+fun ActionButton(
+    onSend: () -> Unit,
+    isEnabled: Boolean = true
+) {
 
     TextButton(
+        enabled = isEnabled,
         colors = ButtonDefaults.textButtonColors(
             containerColor = RetroAmber,
             contentColor = VoidBlack

@@ -5,16 +5,22 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alajemba.paristransitace.ui.theme.Dimens
@@ -26,10 +32,14 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 @Composable
 fun ChatInputField(
     hint: String,
+    isEnabled: Boolean = true,
     onSend: (String) -> Unit
 ) {
 
-    val textFieldValue = remember { mutableStateOf("") }
+    var textFieldValue by remember { mutableStateOf("") }
+    val canSend by remember(textFieldValue, isEnabled) {
+        mutableStateOf(isEnabled && textFieldValue.isNotBlank())
+    }
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -46,10 +56,17 @@ fun ChatInputField(
         ) {
 
             BasicTextField(
-                value = textFieldValue.value,
+                value = textFieldValue,
                 onValueChange = {
-                    textFieldValue.value = it
+                    textFieldValue = it
                 },
+                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Send),
+                keyboardActions = KeyboardActions(onSend = {
+                    if (canSend) {
+                        onSend(textFieldValue)
+                        textFieldValue = ""
+                    }
+                }),
                 textStyle = TextStyle(
                     color = RetroAmber,
                     fontFamily = MaterialTheme.typography.bodyMedium.fontFamily,
@@ -60,7 +77,7 @@ fun ChatInputField(
                 decorationBox = { innerTextField ->
                     innerTextField()
 
-                    if (textFieldValue.value.isEmpty()) {
+                    if (textFieldValue.isEmpty()) {
                         Text(
                             text = hint,
                             style = MaterialTheme.typography.bodyMedium,
@@ -74,10 +91,13 @@ fun ChatInputField(
 
         Spacer(modifier = Modifier.width(Dimens.Space.small))
 
-        ActionButton(onSend = {
-            onSend(textFieldValue.value)
-            textFieldValue.value = ""
-        })
+        ActionButton(
+            onSend = {
+                onSend(textFieldValue)
+                textFieldValue = ""
+            },
+            isEnabled = canSend
+        )
     }
 }
 

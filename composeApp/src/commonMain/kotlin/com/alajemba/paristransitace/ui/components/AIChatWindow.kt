@@ -33,6 +33,7 @@ fun AIChatWindow(
     chatMessages: List<ChatUiModel>,
     onSend: (String) -> Unit,
     modifier: Modifier = Modifier,
+    isNewMessageEnabled: Boolean = true
 ) {
     Column(
         modifier = modifier
@@ -63,7 +64,7 @@ fun AIChatWindow(
                 .wrapContentHeight(),
             contentAlignment = Alignment.Center
         ) {
-            ChatInputField(stringResource(Res.string.reply_ellipsis), onSend)
+            ChatInputField(stringResource(Res.string.reply_ellipsis), isNewMessageEnabled,onSend)
         }
 
         Spacer(modifier = Modifier.height(Dimens.Space.small))

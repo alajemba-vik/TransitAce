@@ -44,12 +44,12 @@ import paristransitace.composeapp.generated.resources.*
 internal fun GameScreen(
     gameViewModel: GameViewModel,
     userViewModel: UserViewModel,
-    onNavigateHome: () -> Unit
+    onNavigateHome: () -> Unit,
+    onReset: () -> Unit
 ) {
 
     LaunchedEffect(Unit) {
-        println("GameScreen LaunchedEffect: Starting game with isEnglish = ${userViewModel.gameSetupState.value.isEnglish}")
-        gameViewModel.startGame(userViewModel.gameSetupState.value.isEnglish)
+        gameViewModel.startGame()
     }
 
     val currentScenario = gameViewModel.currentScenario.collectAsState().value
@@ -108,7 +108,9 @@ internal fun GameScreen(
                         reason = gameViewModel.gameReport.value.summary,
                         onRestart = {
                             isGameOver = false
-                            gameViewModel.restartGame(userViewModel.gameSetupState.value.isEnglish)
+                            userViewModel.reset()
+                            onReset()
+                            gameViewModel.startGame()
                         }
                     )
                 }

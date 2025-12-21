@@ -87,7 +87,9 @@ kotlin {
             implementation(libs.coroutines.extensions)
             // Koin for Compose ViewModels (provides androidContext extensions)
             implementation(libs.koin.compose.viewmodel)
-
+            // Koog for AI integration
+            implementation(libs.koog.agents)
+            implementation(libs.kotlinx.datetime)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

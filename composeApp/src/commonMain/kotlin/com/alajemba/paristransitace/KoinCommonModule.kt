@@ -35,7 +35,7 @@ val commonModule = module {
     }
 
     single {
-        ChatSDK(get(), get())
+        TransitAceSDK(get(), get())
     }
 
     single {
