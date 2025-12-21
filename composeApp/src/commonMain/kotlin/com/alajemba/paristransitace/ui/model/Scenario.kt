@@ -9,8 +9,9 @@ data class Scenario(
     val description: String,
     val options: List<ScenarioOption>,
     val correctOptionId: String, // Can be an empty string for some scenarios that have no "correct answer" only repercussions
-    val nextScenarioId: String? = null, // TODO("Use once data is fetched from backend"
-    val currentIndexInGame: Int = -1
+    val nextScenarioId: String? = null,
+    val currentIndexInGame: Int = -1,
+    val scenarioTheme: ScenarioTheme
 )
 
 

@@ -4,8 +4,8 @@
     <string name="connecting_ellipsis">Connecting...</string>
     <string name="map">Map</string>
     <string name="comms">Comms</string>
-    <string name="chat_window_title">Sophie_Hotline_v2.0</string>
-    <string name="ai_name">Sophie</string>
+    <string name="chat_window_title">Sophia_Hotline_v2.0</string>
+    <string name="ai_name">Sophia</string>
     <string name="you">You</string>
     <string name="reply_ellipsis">Reply...</string>
     <string name="send">Send</string>
@@ -15,7 +15,7 @@
     <string name="next">Next</string>
     <string name="game_screen_scenario_options_description">Available Actions</string>
     <string name="chat_window_provide_language_instruction">[ TYPE 'ENGLISH' OR 'FRENCH' ABOVE ]</string>
-    <string name="chat_window_initial_message">Wake up! Orly isn't the Ritz. I'm Sophie. Listen to me and you might save some money. English or French?</string>
+    <string name="chat_window_initial_message">Wake up! Orly isn't the Ritz. I'm Sophia. Listen to me and you might save some money. English or French?</string>
     <string name="landing_wake_up">Wake up.</string>
     <string name="home_button_acc_description">Back to Home</string>
     <string name="landing_landed_desc">You just landed in Paris from Tanzania.\n20 years old. €100 in your pocket. Zero experience.</string>
@@ -31,7 +31,7 @@
     <string name="landing_bullet3">One mistake = €60 fine</string>
     <string name="landing_bullet3_highlight">€60 fine</string>
     <string name="landing_instructions">Navigate 8 scenarios. Manage your budget.\nAvoid the controllers. Master the bureaucracy.</string>
-    <string name="landing_guide">Your guide: Sophie, a 68-year-old Parisian grandmother.</string>
+    <string name="landing_guide">Your guide: Sophia, a 68-year-old Parisian grandmother.</string>
     <string name="landing_guide_desc">She's sarcastic, blunt, and your only hope.</string>
     <string name="landing_click_to_begin">[CLICK TO BEGIN]</string>
     <string name="landing_begin_simulation">BEGIN SIMULATION</string>

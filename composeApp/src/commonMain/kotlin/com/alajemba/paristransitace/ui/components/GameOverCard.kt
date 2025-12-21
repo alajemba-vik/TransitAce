@@ -1,5 +1,6 @@
 package com.alajemba.paristransitace.ui.components
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -140,7 +141,7 @@ fun GameOverCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .border(Dimens.Border.thin, RetroAmber)
-                .padding(Dimens.Space.large)
+                .padding(vertical = Dimens.Space.large)
         ) {
             Column {
                 Text(

@@ -7,37 +7,29 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.*
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.alajemba.paristransitace.ui.components.AnimatedGameOverOverlay
+import com.alajemba.paristransitace.ui.components.AnimatedScenarioImage
 import com.alajemba.paristransitace.ui.components.StatsBar
 import com.alajemba.paristransitace.ui.components.TypewriterText
 import com.alajemba.paristransitace.ui.model.Scenario
 import com.alajemba.paristransitace.ui.model.ScenarioOption
-import com.alajemba.paristransitace.ui.theme.AlertRed
-import com.alajemba.paristransitace.ui.theme.Dimens
-import com.alajemba.paristransitace.ui.theme.RetroAmber
-import com.alajemba.paristransitace.ui.theme.SuccessGreen
-import com.alajemba.paristransitace.ui.theme.VoidBlack
+import com.alajemba.paristransitace.ui.theme.*
 import com.alajemba.paristransitace.ui.viewmodels.GameViewModel
 import com.alajemba.paristransitace.ui.viewmodels.UserViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
+import org.jetbrains.compose.resources.imageResource
 import org.jetbrains.compose.resources.stringResource
-import paristransitace.composeapp.generated.resources.Res
 import paristransitace.composeapp.generated.resources.*
 
 @Composable
@@ -45,14 +37,14 @@ internal fun GameScreen(
     gameViewModel: GameViewModel,
     userViewModel: UserViewModel,
     onNavigateHome: () -> Unit,
-    onReset: () -> Unit
+    onNavigateToSetup: () -> Unit,
 ) {
 
     LaunchedEffect(Unit) {
         gameViewModel.startGame()
     }
 
-    val currentScenario = gameViewModel.currentScenario.collectAsState().value
+    val currentScenarioState = gameViewModel.currentScenario.collectAsState()
 
     Column(
         modifier = Modifier
@@ -60,59 +52,73 @@ internal fun GameScreen(
             .background(VoidBlack)
             .statusBarsPadding()
             .safeDrawingPadding()
-            .padding(Dimens.Space.medium)
+            .padding(top = Dimens.Space.medium)
     ) {
-
         ScreenHeader(
-            scenarioTitle =  "${stringResource(Res.string.scenario).uppercase()} ${currentScenario?.id}",
+            scenarioTitle =  "${stringResource(Res.string.scenario).uppercase()} ${currentScenarioState.value?.id}",
             progress = gameViewModel.scenarioProgress.value,
             progressText =gameViewModel.scenarioProgressText.collectAsState("").value,
-            onHomeClick = onNavigateHome
+            onHomeClick = onNavigateHome,
+            onSettingsClick = onNavigateToSetup
         )
 
-        StatsBar(userViewModel.userStatsState.value)
+        Column(
+            modifier = Modifier
+                .padding(horizontal = Dimens.Space.medium)
+        ) {
 
-        var isGameOver by remember { mutableStateOf(false) }
+            StatsBar(
+                userViewModel.userStatsState.value,
+                onMapsClicked = {
 
-        when {
-            !isGameOver -> {
-                ScreenContent(
-                    currentScenario,
-                    onOptionSelected = { option ->
-                        userViewModel.updateStats(
-                            budgetImpact = option.budgetImpact,
-                            moraleImpact = option.moraleImpact,
-                            increaseLegalInfractionsBy = option.increaseLegalInfractionsBy
-                        )
-                    },
-                    loadNextScenario = {
-                        if (!gameViewModel.nextScenario()) {
-                            isGameOver = true
-                            gameViewModel.calculateFinalGrade(
-                                budgetRemaining = userViewModel.userStatsState.value.budget,
-                                moraleRemaining = userViewModel.userStatsState.value.morale,
-                                legalInfractionsCount = userViewModel.userStatsState.value.legalInfractionsCount
+                },
+                onCommsClicked = {
+
+                }
+            )
+
+            var isGameOver by remember { mutableStateOf(false) }
+
+            when {
+                !isGameOver -> {
+                    ScreenContent(
+                        currentScenarioState.value,
+                        onOptionSelected = { option ->
+                            userViewModel.updateStats(
+                                budgetImpact = option.budgetImpact,
+                                moraleImpact = option.moraleImpact,
+                                increaseLegalInfractionsBy = option.increaseLegalInfractionsBy
                             )
-                        }
-                    }
-                )
-            }
-            else -> {
-                with(userViewModel.userStatsState) {
-
-                    AnimatedGameOverOverlay(
-                        moneyRemaining = value.budget,
-                        moraleRemaining = value.morale,
-                        legalInfractionsCount = value.legalInfractionsCount,
-                        grade = gameViewModel.gameReport.value.grade,
-                        reason = gameViewModel.gameReport.value.summary,
-                        onRestart = {
-                            isGameOver = false
-                            userViewModel.reset()
-                            onReset()
-                            gameViewModel.startGame()
+                        },
+                        loadNextScenario = {
+                            if (!gameViewModel.nextScenario()) {
+                                isGameOver = true
+                                gameViewModel.calculateFinalGrade(
+                                    budgetRemaining = userViewModel.userStatsState.value.budget,
+                                    moraleRemaining = userViewModel.userStatsState.value.morale,
+                                    legalInfractionsCount = userViewModel.userStatsState.value.legalInfractionsCount
+                                )
+                            }
                         }
                     )
+                }
+
+                else -> {
+                    with(userViewModel.userStatsState) {
+
+                        AnimatedGameOverOverlay(
+                            moneyRemaining = value.budget,
+                            moraleRemaining = value.morale,
+                            legalInfractionsCount = value.legalInfractionsCount,
+                            grade = gameViewModel.gameReport.value.grade,
+                            reason = gameViewModel.gameReport.value.summary,
+                            onRestart = {
+                                isGameOver = false
+                                userViewModel.reset()
+                                gameViewModel.startGame()
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -141,11 +147,21 @@ private fun ColumnScope.ScreenContent(
             item {
                 Box(
                     modifier = Modifier
+                        .padding(vertical = Dimens.Space.medium)
                         .fillMaxWidth()
-                        .height(200.dp)
-                        .background(Color.Black)
-                        .border(Dimens.Border.thin, RetroAmber.copy(alpha = 0.1f))
-                )
+                        .height(Dimens.Space.screenHeroHeight)
+                        .border(
+                            Dimens.Border.thick,
+                            RetroAmber.copy(alpha = 0.1f),
+                            RoundedCornerShape(12.dp)
+                        )
+                ){
+                    AnimatedScenarioImage(
+                        currentScenario.scenarioTheme.image,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
             }
 
             item {
@@ -171,8 +187,8 @@ private fun ColumnScope.ScreenContent(
                     color = Color.Gray.copy(alpha = 0.5f)
                 )
                 HorizontalDivider(
-                    modifier = Modifier.padding(top = 4.dp),
-                    thickness = 1.dp,
+                    modifier = Modifier.padding(top = Dimens.Space.tiny),
+                    thickness = Dimens.Border.thin,
                     color = Color.Gray.copy(alpha = 0.2f)
                 )
             }
@@ -188,7 +204,7 @@ private fun ColumnScope.ScreenContent(
             item {
                 Spacer(modifier = Modifier.height(Dimens.Space.small))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(8.dp).background(RetroAmber.copy(alpha = 0.5f)))
+                    Box(modifier = Modifier.size(Dimens.Space.small).background(RetroAmber.copy(alpha = 0.5f)))
                     Spacer(modifier = Modifier.width(Dimens.Space.small))
                     Text(
                         text = stringResource(Res.string.game_screen_scenario_options_description).uppercase() + ":",
@@ -240,48 +256,76 @@ private fun ColumnScope.ScreenContent(
 
 
 @Composable
-fun ScreenHeader(
+private fun ScreenHeader(
     scenarioTitle: String,
     progress: Float,
     progressText: String,
-    onHomeClick: () -> Unit
+    onHomeClick: () -> Unit,
+    onSettingsClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(end = Dimens.Space.medium, start = Dimens.Space.small)
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onHomeClick) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(end = Dimens.Space.small)
+            ) {
+                val iconSize = 38.dp
+
+                IconButton(
+                    onClick = onHomeClick, modifier = Modifier.size(iconSize)) {
                     Icon(
-                        imageVector = Icons.Default.Home,
+                        imageVector = Icons.Outlined.Home,
                         contentDescription = stringResource(Res.string.home_button_acc_description),
-                        tint = RetroAmber
+                        tint = RetroAmber.copy(alpha = 0.7f)
                     )
                 }
-                Spacer(modifier = Modifier.width(8.dp))
 
-                Text(
-                    text = scenarioTitle,
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = Color.Gray
-                )
+                IconButton(
+                    onClick = {
+                        // show a dialog
+                        onSettingsClick()
+                    },
+                    modifier = Modifier.size(iconSize)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Settings,
+                        contentDescription = stringResource(Res.string.home_button_acc_description),
+                        tint = RetroAmber.copy(alpha = 0.7f)
+                    )
+                }
+                Spacer(modifier = Modifier.width(Dimens.Space.small))
+
+                if (scenarioTitle.isNotBlank()) {
+                    Text(
+                        text = scenarioTitle,
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = Color.Gray
+                    )
+                }
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 LinearProgressIndicator(
                     progress = { progress },
-                    modifier = Modifier.width(100.dp),
+                    modifier = Modifier.weight(1f),
                     color = RetroAmber.copy(alpha = 0.5f),
                     trackColor = Color.DarkGray,
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(Dimens.Space.small))
                 Text(progressText, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
             }
         }
 
-        HorizontalDivider(color = Color.Gray.copy(alpha = 0.3f), modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(color = Color.Gray.copy(alpha = 0.3f), modifier = Modifier.padding(vertical = Dimens.Space.small))
     }
 }
 
@@ -302,11 +346,12 @@ fun OptionRow(index: Int, text: String, onClick: () -> Unit) {
 
         Box(
             modifier = Modifier
-                .width(50.dp)
+                .width(Dimens.Space.optionIndexWidth)
                 .fillMaxHeight()
                 .background(RetroAmber.copy(alpha = if (wasClicked) 0.5f else 0.05f))
-                .border(width = 0.dp, color = Color.Transparent)
-                .padding(vertical = 16.dp),
+                .border(width = Dimens.Space.zero, color = Color.Transparent)
+                .padding(vertical = Dimens.Space.medium)
+            ,
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -316,12 +361,12 @@ fun OptionRow(index: Int, text: String, onClick: () -> Unit) {
             )
         }
 
-        Box(modifier = Modifier.width(1.dp).fillMaxHeight().background(Color.Gray.copy(alpha = 0.3f)))
+        Box(modifier = Modifier.width(Dimens.Space.thin).fillMaxHeight().background(Color.Gray.copy(alpha = 0.3f)))
 
         Box(
             modifier = Modifier
                 .weight(1f)
-                .padding(16.dp),
+                .padding(Dimens.Space.medium),
             contentAlignment = Alignment.CenterStart
         ) {
             Text(
@@ -365,7 +410,7 @@ fun ResultCard(
             hasAddedNewLine = hasAddedNewLineForTypewriterText
         )
 
-        HorizontalDivider(color = RetroAmber.copy(alpha = 0.3f), modifier = Modifier.padding(vertical = 12.dp))
+        HorizontalDivider(color = RetroAmber.copy(alpha = 0.3f), modifier = Modifier.padding(vertical = Dimens.Space.mediumSmall))
 
         Row(
             modifier = Modifier.fillMaxWidth(),

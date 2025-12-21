@@ -10,6 +10,7 @@ import com.alajemba.paristransitace.ui.model.GameSetup
 import com.alajemba.paristransitace.ui.model.GameSetup.GameLanguage
 import com.alajemba.paristransitace.ui.model.Scenario
 import com.alajemba.paristransitace.ui.model.ScenarioOption
+import com.alajemba.paristransitace.ui.model.ScenarioTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
@@ -139,8 +140,7 @@ internal class GameViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
             'C' -> "You made it through, but it wasn't pretty."
             'D' -> "Barely alive. You need a vacation from your vacation."
             'E' -> "Technically you survived, but at what cost?"
-            'F' -> if (legalInfractionsCount >= 3) "Deported. Three strikes and you are out."
-            else "Paris chewed you up and spit you out."
+            'F' -> if (legalInfractionsCount >= 3) "Deported. Three strikes and you are out." else "Paris chewed you up and spit you out."
             else -> "Unknown fate."
         }
     }
@@ -176,14 +176,16 @@ private fun createScenario(
     description: String,
     options: List<ScenarioOption>,
     correctOptionID: String,
-    nextScenarioId: String? = null
+    nextScenarioId: String? = null,
+    theme: ScenarioTheme
 ) = Scenario(
     id = id,
     title = title,
     description = description,
     options = options,
     correctOptionId = correctOptionID,
-    nextScenarioId = nextScenarioId
+    nextScenarioId = nextScenarioId,
+    scenarioTheme = theme
 )
 
 
@@ -222,7 +224,8 @@ fun buildDefaultScenarios(isFr: Boolean): List<Scenario> {
                 )
             ),
             correctOptionID = "0_APP",
-            nextScenarioId = "1"
+            nextScenarioId = "1",
+            theme = ScenarioTheme.MORNING
         ),
 
         // SCENARIO 1: Commute to Class
@@ -250,7 +253,8 @@ fun buildDefaultScenarios(isFr: Boolean): List<Scenario> {
                 )
             ),
             correctOptionID = "",
-            nextScenarioId = "1_B"
+            nextScenarioId = "1_B",
+            theme = ScenarioTheme.UNIVERSITY
         ),
 
         // SCENARIO 1_B: The Open Gate (INFRACTION HERE)
@@ -279,7 +283,8 @@ fun buildDefaultScenarios(isFr: Boolean): List<Scenario> {
                 )
             ),
             correctOptionID = "1B_SCAN",
-            nextScenarioId = "2"
+            nextScenarioId = "2",
+            theme = ScenarioTheme.GATE_JUMP
         ),
 
         // SCENARIO 2: To The Louvre
@@ -304,11 +309,12 @@ fun buildDefaultScenarios(isFr: Boolean): List<Scenario> {
                     text = if (isFr) "Chercher un guichet pour acheter un ticket carton" else "Find a counter to buy a cardboard ticket",
                     budgetImpact = 0.0,
                     moraleImpact = -10,
-                    commentary = if (isFr) "Sophie rit. 'Les cartons c'est fini mon chou !' Vous perdez du temps." else "Sophie laughs. 'Cardboard is dead, darling!' You waste time."
+                    commentary = if (isFr) "Sophia rit. 'Les cartons c'est fini mon chou !' Vous perdez du temps." else "Sophia laughs. 'Cardboard is dead, darling!' You waste time."
                 )
             ),
             correctOptionID = "2_WATCH",
-            nextScenarioId = "3"
+            nextScenarioId = "3",
+            theme = ScenarioTheme.EIFFEL_TOWER
         ),
 
         // SCENARIO 3: Evening Trap (INFRACTION HERE)
@@ -337,7 +343,8 @@ fun buildDefaultScenarios(isFr: Boolean): List<Scenario> {
                 )
             ),
             correctOptionID = "3_NEW_BUS",
-            nextScenarioId = "4_B"
+            nextScenarioId = "4_B",
+            theme = ScenarioTheme.BUS_INTERIOR
         ),
 
         // SCENARIO 4_B: La Défense choice
@@ -365,7 +372,8 @@ fun buildDefaultScenarios(isFr: Boolean): List<Scenario> {
                 )
             ),
             correctOptionID ="4B_RER",
-            nextScenarioId = "4"
+            nextScenarioId = "4",
+            theme = ScenarioTheme.SUBURBAN_STATION
         ),
 
         // SCENARIO 4: Versailles
@@ -393,7 +401,8 @@ fun buildDefaultScenarios(isFr: Boolean): List<Scenario> {
                 )
             ),
             correctOptionID = "4_STANDARD",
-            nextScenarioId = "5"
+            nextScenarioId = "5",
+            theme = ScenarioTheme.SUBURBAN_STATION
         ),
 
         // SCENARIO 5: Imagine R subscription
@@ -422,7 +431,8 @@ fun buildDefaultScenarios(isFr: Boolean): List<Scenario> {
                 )
             ),
             correctOptionID = "5_SUB",
-            nextScenarioId = "6"
+            nextScenarioId = "6",
+            theme = ScenarioTheme.UNIVERSITY
         ),
 
         // SCENARIO 6: Airport return
@@ -450,8 +460,8 @@ fun buildDefaultScenarios(isFr: Boolean): List<Scenario> {
                 )
             ),
             correctOptionID = "6_NO",
-            nextScenarioId = null
+            nextScenarioId = null,
+            theme = ScenarioTheme.AIRPORT
         )
     )
 }
-

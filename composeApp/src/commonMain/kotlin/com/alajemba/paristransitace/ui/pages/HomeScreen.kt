@@ -7,6 +7,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -19,6 +20,8 @@ import com.alajemba.paristransitace.ui.model.ChatUiModel
 import com.alajemba.paristransitace.ui.model.GameSetup
 import com.alajemba.paristransitace.ui.model.UIDataState
 import com.alajemba.paristransitace.ui.model.UserStats
+import com.alajemba.paristransitace.ui.theme.Dimens
+import com.alajemba.paristransitace.ui.theme.VoidBlack
 import com.alajemba.paristransitace.ui.viewmodels.ChatViewModel
 import com.alajemba.paristransitace.ui.viewmodels.GameViewModel
 import com.alajemba.paristransitace.ui.viewmodels.UserViewModel
@@ -83,14 +86,13 @@ internal fun HomeScreen(
     }
 
     ScreenContent(
-        budget = chatViewModel.userStatsState.collectAsState().value.budget,
-        morale = chatViewModel.userStatsState.collectAsState().value.morale,
-        legalInfractionsCount = chatViewModel.userStatsState.collectAsState().value.legalInfractionsCount,
+        userStats = chatViewModel.userStatsState.collectAsState().value,
         chats = chatViewModel.chatMessages.collectAsState().value,
         onSend = { message ->
             chatViewModel.attachNewMessage(message, ChatMessageSender.USER)
             chatViewModel.setupGame(userViewModel.setupGame(message))
         },
+        showUnknownState = true,
         isNewMessageEnabled = !userViewModel.gameSetupState.collectAsState().value.isSetupComplete &&
         !chatViewModel.isLoading.collectAsState(false).value
     )
@@ -99,23 +101,26 @@ internal fun HomeScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ScreenContent(
-    budget: Double,
-    morale: Int,
-    legalInfractionsCount: Int,
     chats: List<ChatUiModel>,
     onSend: (String) -> Unit,
-    isNewMessageEnabled: Boolean = true
+    isNewMessageEnabled: Boolean = true,
+    showUnknownState: Boolean = false,
+    onCommsClicked: () -> Unit = {},
+    onMapsClicked: () -> Unit = {},
+    userStats: UserStats,
 ) {
     Scaffold(
         topBar =  {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = VoidBlack),
                 title = {
                     StatsBar(
-                        UserStats(
-                            budget = budget,
-                            morale = morale,
-                            legalInfractionsCount = legalInfractionsCount
-                        )
+                        userStats = userStats,
+                        showUnknownState = showUnknownState,
+                        isCommsEnabled = isNewMessageEnabled,
+                        onMapsClicked = onMapsClicked,
+                        onCommsClicked = onCommsClicked,
+                        modifier = Modifier.padding(end = Dimens.Space.medium, start = Dimens.Space.tiny)
                     )
                 }
             )
@@ -132,37 +137,3 @@ private fun ScreenContent(
     }
 }
 
-
-@Composable
-fun AIConnectionStatusBar(status: AIStatus){
-    val text = "SOPHIE_LINK: " + when(status){
-        AIStatus.CONNECTED -> stringResource(Res.string.connected).uppercase()
-        AIStatus.CONNECTING -> stringResource(Res.string.connecting_ellipsis).uppercase()
-        AIStatus.DISCONNECTED -> stringResource(Res.string.disconnected).uppercase()
-    }
-
-    Text(
-        text = text,
-        style = MaterialTheme.typography.headlineSmall,
-        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
-    )
-}
-
-
-@Preview
-@Composable
-private fun HomeScreenPreview() {
-    ScreenContent(
-        budget = 100.0,
-        morale = 100,
-        legalInfractionsCount = 0,
-        chats = listOf(
-            ChatUiModel(
-                sender = ChatMessageSender.AI,
-                message = "Hello"
-            )
-        ),
-        onSend = {}
-    )
-
-}

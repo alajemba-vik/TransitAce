@@ -47,7 +47,7 @@ internal class TransitAceSDK(
 
         println(response.data)
 
-        val message = if (response.data.isNullOrBlank()) "Sophie is on a cigarette break. (Connection Error)" else response.data
+        val message = if (response.data.isNullOrBlank()) "Sophia is on a cigarette break. (Connection Error)" else response.data
 
         dbQuery.insertChatMessage(
             id = null,

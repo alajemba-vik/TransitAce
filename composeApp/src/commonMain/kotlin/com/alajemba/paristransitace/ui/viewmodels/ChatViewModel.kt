@@ -46,12 +46,12 @@ internal class ChatViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
                 false -> "D'accord ${updatedGameSetup.name}, dernière étape. Sélectionnez votre type de simulation : Par défaut ou Personnalisé ?"
             }
             updatedGameSetup.isOnScenariosGenerationStep -> chatMessage = when {
-                updatedGameSetup.isEnglish && !updatedGameSetup.isCustomSimulation -> """Welcome, ${updatedGameSetup.name}. You just arrived from Tanzania. 20 years old, low confidence, €100 in your pocket. Initializing..."""
-                !updatedGameSetup.isEnglish && !updatedGameSetup.isCustomSimulation -> """Bienvenue, ${updatedGameSetup.name}. Vous venez d'arriver de Tanzanie. 20 ans, 
+                /*updatedGameSetup.isEnglish && !updatedGameSetup.isCustomSimulation -> """Welcome, ${updatedGameSetup.name}. You just arrived from Tanzania. 20 years old, low confidence, €100 in your pocket. Initializing..."""
+                !updatedGameSetup.isEnglish && !updatedGameSetup.isCustomSimulation -> """Bienvenue, ${updatedGameSetup.name}. Vous venez d'arriver de Tanzanie. 20 ans,
                     |peu de confiance, 100 € dans votre poche. Initialisation...
-                """.trimMargin()
-                updatedGameSetup.isEnglish && updatedGameSetup.isCustomSimulation -> "Custom simulation selected. Generating scenarios..."
-                else -> "Simulation personnalisée sélectionnée. Génération des scénarios..."
+                """.trimMargin()*/
+                updatedGameSetup.isEnglish -> "Simulation selected. Generating scenarios..."
+                else -> "Simulation sélectionnée. Génération des scénarios..."
             }.also {
                 if (updatedGameSetup.isCustomSimulation) {
                     _uiDataState.value = UIDataState.Loading

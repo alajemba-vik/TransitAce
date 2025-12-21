@@ -4,8 +4,8 @@
     <string name="connecting_ellipsis">Connexion...</string>
     <string name="map">Carte</string>
     <string name="comms">Communications</string>
-    <string name="chat_window_title">Sophie_Hotline_v2.0</string>
-    <string name="ai_name">Sophie</string>
+    <string name="chat_window_title">Sophia_Hotline_v2.0</string>
+    <string name="ai_name">Sophia</string>
     <string name="you">Vous</string>
     <string name="reply_ellipsis">Répondre...</string>
     <string name="send">Envoyer</string>
@@ -15,7 +15,7 @@
     <string name="next">Suivant</string>
     <string name="game_screen_scenario_options_description">Actions disponibles</string>
     <string name="chat_window_provide_language_instruction">[ TAPEZ 'ENGLISH' OU 'FRENCH' CI-DESSUS ]</string>
-    <string name="chat_window_initial_message">Réveillez‑vous ! Orly n'est pas le Ritz. Je suis Sophie. Écoutez‑moi et vous pourriez économiser de l'argent. Anglais ou Français ?</string>
+    <string name="chat_window_initial_message">Réveillez‑vous ! Orly n'est pas le Ritz. Je suis Sophia. Écoutez‑moi et vous pourriez économiser de l'argent. Anglais ou Français ?</string>
 
     <string name="landing_wake_up">Réveillez‑vous.</string>
     <string name="landing_landed_desc">Vous venez d'atterrir à Paris depuis la Tanzanie.\n20 ans. 100€ en poche. Aucune expérience.</string>
@@ -31,7 +31,7 @@
     <string name="landing_bullet3">Une erreur = amende de 60 €</string>
     <string name="landing_bullet3_highlight">amende de 60 €</string>
     <string name="landing_instructions">Parcourez 8 scénarios. Gérez votre budget.\nÉvitez les contrôleurs. Maîtrisez la bureaucratie.</string>
-    <string name="landing_guide">Votre guide : Sophie, une grand-mère parisienne de 68 ans.</string>
+    <string name="landing_guide">Votre guide : Sophia, une grand-mère parisienne de 68 ans.</string>
     <string name="landing_guide_desc">Elle est sarcastique, cash, et votre seule chance.</string>
     <string name="landing_click_to_begin">[CLIQUER POUR COMMENCER]</string>
     <string name="landing_begin_simulation">LANCER LA SIMULATION</string>

@@ -2,6 +2,7 @@ package com.alajemba.paristransitace.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -27,9 +28,15 @@ import paristransitace.composeapp.generated.resources.map
 @Composable
 fun StatsBar(
     userStats: UserStats,
-){
+    showUnknownState: Boolean = false,
+    isMapEnabled: Boolean = false,
+    isCommsEnabled: Boolean = true,
+    onCommsClicked: () -> Unit,
+    onMapsClicked: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center
     ) {
         Row(
@@ -37,30 +44,55 @@ fun StatsBar(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(userStats.budget.toString(), color = RetroAmber, style = MaterialTheme.typography.labelMedium)
+            Text(
+                if (showUnknownState) "-" else userStats.budget.toString(),
+                color = RetroAmber,
+                style = MaterialTheme.typography.labelMedium
+            )
             Divider()
-            Text(userStats.morale.toString()+"%", color = RetroAmber, style = MaterialTheme.typography.labelMedium)
+            Text(
+                if (showUnknownState) "-" else (userStats.morale.toString() + "%"),
+                color = RetroAmber,
+                style = MaterialTheme.typography.labelMedium
+            )
             Divider()
-            Text(userStats.legalInfractionsCount.toString(), color = RetroAmber, style = MaterialTheme.typography.labelMedium)
+            Text(
+                userStats.legalInfractionsCount.toString(),
+                color = RetroAmber,
+                style = MaterialTheme.typography.labelMedium
+            )
 
             Spacer(modifier = Modifier.width(Dimens.Space.small))
 
-            HeaderTab(stringResource(Res.string.map).uppercase(), active = false,)
-            HeaderTab(stringResource(Res.string.comms).uppercase(),active = true)
+            HeaderTab(
+                stringResource(Res.string.map).uppercase(),
+                active = isMapEnabled && !showUnknownState,
+                onClick = onMapsClicked
+            )
+            HeaderTab(
+                stringResource(Res.string.comms).uppercase(),
+                active = isCommsEnabled && !showUnknownState,
+                onClick = onCommsClicked
+            )
         }
     }
 }
 
 @Composable
-private fun Divider()  = Text("|", color = Color.Gray)
+private fun Divider() = Text("|", color = Color.Gray)
 
 @Composable
-fun HeaderTab(text: String, active: Boolean) {
+fun HeaderTab(
+    text: String,
+    active: Boolean,
+    onClick: () -> Unit = {}
+) {
     Box(
         modifier = Modifier
             .border(Dimens.Border.thin, if (active) RetroAmber else Color.Gray.copy(alpha = 0.5f))
             .background(if (active) RetroAmber.copy(alpha = 0.2f) else Color.Transparent)
             .padding(horizontal = 6.dp, vertical = 2.dp)
+            .clickable(onClick = onClick)
     ) {
         Text(
             text = text,

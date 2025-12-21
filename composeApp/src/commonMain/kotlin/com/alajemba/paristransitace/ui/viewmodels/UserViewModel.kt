@@ -57,11 +57,11 @@ internal class UserViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
                 }
 
                 // Default simulation has already been generated
-                if (!_gameSetupState.value.isCustomSimulation) {
+                /*if (!_gameSetupState.value.isCustomSimulation) {
                     _gameSetupState.value = gameSetupState.value.copy(
                         scenariosGenerationStatus = GameSetup.ScenarioGenerationStatus.SUCCESS
                     )
-                }
+                }*/
             }
 
             _gameSetupState.value.isOnScenariosGenerationStep-> {

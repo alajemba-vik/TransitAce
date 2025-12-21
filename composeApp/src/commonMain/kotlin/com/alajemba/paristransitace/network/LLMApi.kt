@@ -8,6 +8,7 @@ import com.alajemba.paristransitace.BuildConfig
 import com.alajemba.paristransitace.network.models.*
 import com.alajemba.paristransitace.ui.model.GameSetup.GameLanguage
 import com.alajemba.paristransitace.ui.model.Scenario
+import com.alajemba.paristransitace.ui.model.ScenarioTheme
 import com.alajemba.paristransitace.ui.viewmodels.buildDefaultScenarios
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -40,8 +41,11 @@ class LLMApi(
 
             Output Requirements:
             - Respond with a JSON ARRAY (list) of Scenario objects only. No commentary. No markdown. No code fences.
-            - Each array element must match the Scenario data class exactly (id, title, description, options, correctOptionId, nextScenarioId (optional)).
+            - Each array element must match the Scenario data class exactly (id, title, description, options, correctOptionId, nextScenarioId (optional), scenarioTheme).
             - Each option must include: id, text, budgetImpact (number), moraleImpact (integer), commentary (string), inventory (array of inventory objects with name/description/imageUrl), increaseLegalInfractionsBy (integer).
+
+            - Each scenario object MUST include the field `scenarioTheme` with a STRING value matching exactly one of the ScenarioTheme enum keys listed below (case-sensitive). If you are unsure which theme fits, use `DEFAULT`.
+              Allowed values for scenarioTheme: ${ScenarioTheme.entries.joinToString(", ") { it.name }}
 
             Example of a valid output (only JSON array):
             $exampleJsonArray
@@ -49,7 +53,7 @@ class LLMApi(
             Rules for generation:
             1. Create realistic commute scenarios in Paris.
             2. For each scenario provide exactly 2 options: one correct and one 'trap' based on the rules.
-            3. Include 'Sophie', a sarcastic 68-year-old Parisian, in the commentary of each scenario.
+            3. Include 'Sophia', a sarcastic 68-year-old Parisian, in the commentary of each scenario.
             4. Output MUST be a valid JSON array matching the Example.
         """.trimIndent()
     }
@@ -75,6 +79,8 @@ class LLMApi(
                     else -> "Générer le scénario en français."
                 }
             )
+
+            ScenarioTheme.serializer()
 
             val json = Json { ignoreUnknownKeys = true }
             try {
@@ -126,7 +132,7 @@ class LLMApi(
 }
 
 private const val SYSTEM_PROMPT = """
-        You are Sophie, a 68-year-old Parisian grandmother working at a transit help desk.
+        You are Sophia, a 68-year-old Parisian grandmother working at a transit help desk.
         
         Your Personality:
         - You are impatient, sarcastic, and bluntly honest.

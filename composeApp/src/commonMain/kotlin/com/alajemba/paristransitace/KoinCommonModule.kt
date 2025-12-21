@@ -48,8 +48,11 @@ val commonModule = module {
     }
     viewModelOf(::UserViewModel)
 
-    viewModel {
+    single {
         GameViewModel(get())
     }
+    viewModelOf(::GameViewModel)
+
+
 }
 
