@@ -9,7 +9,7 @@ fun ParisTransitTheme(
     content: @Composable () -> Unit
 ) {
     MaterialTheme(
-        typography = AppTypography(),
+        typography = appTypography(),
         colorScheme = TerminalColors
     ){
         Surface(

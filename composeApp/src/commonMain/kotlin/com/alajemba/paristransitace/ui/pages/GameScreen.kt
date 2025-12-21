@@ -151,7 +151,7 @@ private fun ColumnScope.ScreenContent(
                         .fillMaxWidth()
                         .height(Dimens.Space.screenHeroHeight)
                         .border(
-                            Dimens.Border.thick,
+                            Dimens.Border.thin,
                             RetroAmber.copy(alpha = 0.1f),
                             RoundedCornerShape(12.dp)
                         )

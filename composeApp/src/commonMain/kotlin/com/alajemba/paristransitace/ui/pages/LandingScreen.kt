@@ -48,7 +48,7 @@ internal fun LandingScreen(
 
 
     val wakeUpAnimationStage = LandingAnimationStage.WakeUp(
-        text = stringResource(Res.string.landing_wake_up)
+        text = stringResource(Res.string.landing_title)
     )
     val introductionAnimationStage = LandingAnimationStage.Introduction(
         text = stringResource(Res.string.landing_landed_desc)
@@ -224,7 +224,7 @@ private fun LandingHeader() {
         Spacer(modifier = Modifier.height(Dimens.Space.small))
 
         Text(
-            text = stringResource(Res.string.landing_title),
+            text = stringResource(Res.string.landing_heading),
             style = MaterialTheme.typography.headlineMedium,
             color = RetroAmber,
             textAlign = TextAlign.Center,
@@ -281,12 +281,12 @@ private fun HighlightedBulletPoint(text: String, highlight: String) {
         modifier = Modifier.padding(vertical = 4.dp),
         verticalAlignment = Alignment.Top
     ) {
-        Text(text = "▶ ", style = MaterialTheme.typography.bodyLarge, color = RetroAmber)
+        Text(text = "► ", style = MaterialTheme.typography.bodyLarge, color = RetroAmber)
 
         val annotatedString = buildAnnotatedString {
             val startIndex = text.indexOf(highlight)
             if (startIndex >= 0) {
-                append(text.substring(0, startIndex))
+                append(text.take(startIndex))
                 withStyle(style = SpanStyle(color = AlertRed)) {
                     append(highlight)
                 }

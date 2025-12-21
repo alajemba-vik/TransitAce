@@ -17,20 +17,20 @@
     <string name="chat_window_provide_language_instruction">[ TAPEZ 'ENGLISH' OU 'FRENCH' CI-DESSUS ]</string>
     <string name="chat_window_initial_message">Réveillez‑vous ! Orly n'est pas le Ritz. Je suis Sophia. Écoutez‑moi et vous pourriez économiser de l'argent. Anglais ou Français ?</string>
 
-    <string name="landing_wake_up">Réveillez‑vous.</string>
-    <string name="landing_landed_desc">Vous venez d'atterrir à Paris depuis la Tanzanie.\n20 ans. 100€ en poche. Aucune expérience.</string>
+    <string name="landing_title">Simulation Initialisée</string>
+    <string name="landing_landed_desc">Bienvenue dans le Simulateur de Survie du Métro Parisien. Les règles sont strictes. Les amendes sont réelles. Les contrôleurs sont sans pitié.\nVotre mission : Naviguer dans la ville sans finir ruiné.</string>
     <string name="landing_official">SYSTÈME OFFICIEL</string>
     <string name="landing_build">BUILD : 2025.REFORM.V1</string>
     <string name="landing_id">ID : FR-75-IDF-001</string>
-    <string name="landing_title">TRANSIT ACE : PARIS, LA COURSE IMAGINE R</string>
+    <string name="landing_heading">PARIS TRANSIT ACE : LA COURSE IMAGINE R</string>
     <string name="landing_year_changed">Nous sommes en 2025. Tout a changé :</string>
     <string name="landing_bullet1">Les tickets papier sont morts</string>
     <string name="landing_bullet1_highlight">morts</string>
     <string name="landing_bullet2">Les zones tarifaires sont abolies</string>
     <string name="landing_bullet2_highlight">abolies</string>
-    <string name="landing_bullet3">Une erreur = amende de 60 €</string>
+    <string name="landing_bullet3">Amendes plus élevées</string>
     <string name="landing_bullet3_highlight">amende de 60 €</string>
-    <string name="landing_instructions">Parcourez 8 scénarios. Gérez votre budget.\nÉvitez les contrôleurs. Maîtrisez la bureaucratie.</string>
+    <string name="landing_instructions">Résolvez des scénarios dynamiques. Apprenez les règles. Maîtrisez la bureaucratie.</string>
     <string name="landing_guide">Votre guide : Sophia, une grand-mère parisienne de 68 ans.</string>
     <string name="landing_guide_desc">Elle est sarcastique, cash, et votre seule chance.</string>
     <string name="landing_click_to_begin">[CLIQUER POUR COMMENCER]</string>
