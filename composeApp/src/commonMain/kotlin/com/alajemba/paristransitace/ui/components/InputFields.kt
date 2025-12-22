@@ -27,7 +27,10 @@ import com.alajemba.paristransitace.ui.theme.Dimens
 import com.alajemba.paristransitace.ui.theme.RetroAmber
 import com.alajemba.paristransitace.ui.theme.TerminalPalette.Separator
 import com.alajemba.paristransitace.ui.theme.VoidBlack
+import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import paristransitace.composeapp.generated.resources.Res
+import paristransitace.composeapp.generated.resources.send
 
 @Composable
 fun ChatInputField(
@@ -92,11 +95,13 @@ fun ChatInputField(
         Spacer(modifier = Modifier.width(Dimens.Space.small))
 
         ActionButton(
+            label = stringResource(Res.string.send),
             onSend = {
                 onSend(textFieldValue)
                 textFieldValue = ""
             },
-            isEnabled = canSend
+            isEnabled = canSend,
+
         )
     }
 }

@@ -28,8 +28,8 @@
     <string name="landing_bullet1_highlight">morts</string>
     <string name="landing_bullet2">Les zones tarifaires sont abolies</string>
     <string name="landing_bullet2_highlight">abolies</string>
-    <string name="landing_bullet3">Amendes plus élevées</string>
-    <string name="landing_bullet3_highlight">amende de 60 €</string>
+    <string name="landing_bullet3">Les amendes sont plus élevées</string>
+    <string name="landing_bullet3_highlight">élevées</string>
     <string name="landing_instructions">Résolvez des scénarios dynamiques. Apprenez les règles. Maîtrisez la bureaucratie.</string>
     <string name="landing_guide">Votre guide : Sophia, une grand-mère parisienne de 68 ans.</string>
     <string name="landing_guide_desc">Elle est sarcastique, cash, et votre seule chance.</string>
@@ -39,6 +39,8 @@
     <string name="home_button_acc_description">Retour à l'accueil</string>
     <string name="landing_skip_intro">PASSER L'INTRO &gt;&gt;</string>
 
+    <string name="game_screen_on_home_click_dialog_text">Attendez ! Si vous retournez au terminal maintenant, toute votre progression dans la mission sera perdue.\n\nÊtes-vous sûr de vouloir annuler ?</string>
+
     <!-- GameOverCard (FR) -->
     <string name="gameover_title">SIMULATION\nTERMINÉE</string>
     <string name="gameover_subtitle">BULLETIN</string>
@@ -46,4 +48,8 @@
     <string name="gameover_confidence_label">Niveau de confiance</string>
     <string name="gameover_legal_label">Infractions légales</string>
     <string name="gameover_restart_button">&gt; REDEMARER LA SIMULATION</string>
+
+    <string name="ai_says">⚠️ SOPHIE DIT :</string>
+    <string name="stay">RESTER</string>
+    <string name="leave">PARTIR</string>
 </resources>

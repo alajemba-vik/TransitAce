@@ -110,8 +110,13 @@ internal class UserViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
         )
     }
 
-    fun reset() {
+    fun resetUserStats() {
         _userStatsState.value = UserStats()
+    }
+
+    fun clearAllInfo() {
+        transitAceSDK.clearChat()
+        resetUserStats()
     }
 
 }

@@ -28,8 +28,8 @@
     <string name="landing_bullet1_highlight">dead</string>
     <string name="landing_bullet2">Fare zones are abolished</string>
     <string name="landing_bullet2_highlight">abolished</string>
-    <string name="landing_bullet3">Higher fines</string>
-    <string name="landing_bullet3_highlight">€60 fine</string>
+    <string name="landing_bullet3">Fines are higher</string>
+    <string name="landing_bullet3_highlight">higher</string>
     <string name="landing_instructions">Solve dynamic scenarios. Learn the transit rules. \nMaster the bureaucracy.</string>
     <string name="landing_guide">Your guide: Sophia, a 68-year-old Parisian grandmother.</string>
     <string name="landing_guide_desc">She's sarcastic, blunt, and your only hope.</string>
@@ -38,6 +38,7 @@
     <string name="landing_footer">A VIKI-JE GAME • LIVE LIFE\n• EDUCATIONAL GAME • NOT FOR COLLECTING PII •\nEST. 2025</string>
     <string name="landing_skip_intro">[ SKIP INTRO >> ]</string>
 
+    <string name="game_screen_on_home_click_dialog_text">Wait! If you return to the terminal now, all mission progress will be lost.\n\nAre you sure you want to abort?</string>
     <!-- GameOverCard strings -->
     <string name="gameover_title">SIMULATION\nCONCLUDED</string>
     <string name="gameover_subtitle">REPORT CARD</string>
@@ -45,5 +46,9 @@
     <string name="gameover_confidence_label">Confidence Level</string>
     <string name="gameover_legal_label">Legal Infractions</string>
     <string name="gameover_restart_button">&gt; RESTART SIMULATION</string>
+
+    <string name="ai_says">⚠️ SOPHIA SAYS:</string>
+    <string name="stay">STAY</string>
+    <string name="leave">LEAVE</string>
 
 </resources>

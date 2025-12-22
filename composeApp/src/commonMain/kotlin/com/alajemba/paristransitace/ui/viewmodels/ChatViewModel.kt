@@ -23,6 +23,10 @@ internal class ChatViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
     private val _uiDataState: MutableStateFlow<UIDataState> =  MutableStateFlow(UIDataState.Idle)
     val isLoading = _uiDataState.asStateFlow().map { it is UIDataState.Loading }
 
+    init {
+
+    }
+
     fun setWelcomeMessage(initialMessageFromAI: String) {
         attachNewMessage(initialMessageFromAI, ChatMessageSender.AI)
     }

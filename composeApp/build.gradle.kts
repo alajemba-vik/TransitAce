@@ -59,6 +59,9 @@ kotlin {
 
             // Have SQLDelight support Android
             implementation(libs.android.driver)
+
+            // Splash screen
+            implementation(libs.androidx.splashscreen)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -121,7 +124,7 @@ android {
     }
     packaging {
         resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "/META-INF/{AL2.0,LGPL2.1,INDEX.LIST,io.netty.versions.properties,DEPENDENCIES}"
         }
     }
     buildTypes {

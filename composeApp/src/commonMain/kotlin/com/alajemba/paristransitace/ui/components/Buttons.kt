@@ -38,6 +38,7 @@ import paristransitace.composeapp.generated.resources.send
 
 @Composable
 fun ActionButton(
+    label: String,
     onSend: () -> Unit,
     isEnabled: Boolean = true
 ) {
@@ -51,21 +52,13 @@ fun ActionButton(
         onClick = onSend,
         content = {
             Text(
-                text = stringResource(Res.string.send).uppercase(),
-                style = MaterialTheme.typography.labelLarge,
-
-                )
+                text = label.uppercase(),
+                style = MaterialTheme.typography.labelLarge
+            )
         },
         shape = RoundedCornerShape(0.dp),
 
     )
 
 
-}
-
-
-@Preview
-@Composable
-fun ActionButtonPreview() {
-    ActionButton(onSend = {})
 }

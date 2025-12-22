@@ -17,10 +17,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import com.alajemba.paristransitace.ui.components.AnimatedGameOverOverlay
 import com.alajemba.paristransitace.ui.components.AnimatedScenarioImage
 import com.alajemba.paristransitace.ui.components.StatsBar
 import com.alajemba.paristransitace.ui.components.TypewriterText
+import com.alajemba.paristransitace.ui.components.dialogs.AISpeechBubble
 import com.alajemba.paristransitace.ui.model.Scenario
 import com.alajemba.paristransitace.ui.model.ScenarioOption
 import com.alajemba.paristransitace.ui.theme.*
@@ -28,7 +30,6 @@ import com.alajemba.paristransitace.ui.viewmodels.GameViewModel
 import com.alajemba.paristransitace.ui.viewmodels.UserViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
-import org.jetbrains.compose.resources.imageResource
 import org.jetbrains.compose.resources.stringResource
 import paristransitace.composeapp.generated.resources.*
 
@@ -37,14 +38,15 @@ internal fun GameScreen(
     gameViewModel: GameViewModel,
     userViewModel: UserViewModel,
     onNavigateHome: () -> Unit,
-    onNavigateToSetup: () -> Unit,
 ) {
 
     LaunchedEffect(Unit) {
         gameViewModel.startGame()
     }
 
+
     val currentScenarioState = gameViewModel.currentScenario.collectAsState()
+    var showOnHomeClickDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -58,8 +60,9 @@ internal fun GameScreen(
             scenarioTitle =  "${stringResource(Res.string.scenario).uppercase()} ${currentScenarioState.value?.id}",
             progress = gameViewModel.scenarioProgress.value,
             progressText =gameViewModel.scenarioProgressText.collectAsState("").value,
-            onHomeClick = onNavigateHome,
-            onSettingsClick = onNavigateToSetup
+            onHomeClick = {
+                showOnHomeClickDialog = true
+            }
         )
 
         Column(
@@ -114,7 +117,7 @@ internal fun GameScreen(
                             reason = gameViewModel.gameReport.value.summary,
                             onRestart = {
                                 isGameOver = false
-                                userViewModel.reset()
+                                userViewModel.resetUserStats()
                                 gameViewModel.startGame()
                             }
                         )
@@ -123,6 +126,27 @@ internal fun GameScreen(
             }
         }
     }
+
+    if (showOnHomeClickDialog) {
+        Dialog(onDismissRequest = { showOnHomeClickDialog = false }) {
+            AISpeechBubble(
+                text = stringResource(Res.string.game_screen_on_home_click_dialog_text),
+                onConfirm = {
+                    onNavigateHome()
+                    userViewModel.resetUserStats()
+                    userViewModel.clearAllInfo()
+                },
+                onDismiss = { showOnHomeClickDialog = false },
+                titleLabel = stringResource(Res.string.ai_says),
+                confirmLabel = stringResource(Res.string.stay),
+                dismissLabel = stringResource(Res.string.leave)
+            )
+        }
+    }
+
+
+
+
 }
 
 @Composable
@@ -261,7 +285,6 @@ private fun ScreenHeader(
     progress: Float,
     progressText: String,
     onHomeClick: () -> Unit,
-    onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -289,19 +312,6 @@ private fun ScreenHeader(
                     )
                 }
 
-                IconButton(
-                    onClick = {
-                        // show a dialog
-                        onSettingsClick()
-                    },
-                    modifier = Modifier.size(iconSize)
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Settings,
-                        contentDescription = stringResource(Res.string.home_button_acc_description),
-                        tint = RetroAmber.copy(alpha = 0.7f)
-                    )
-                }
                 Spacer(modifier = Modifier.width(Dimens.Space.small))
 
                 if (scenarioTitle.isNotBlank()) {

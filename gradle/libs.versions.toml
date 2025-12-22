@@ -24,6 +24,8 @@ koin = "4.1.1"
 koog = "0.5.4"
 # Fix for datetime compatibility issues in Koog
 dateTime = "0.7.1-0.6.x-compat"
+#Splash screen on android
+androidx-splashscreen = "1.2.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -58,6 +60,7 @@ koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel-navig
 # AI Integration
 koog-agents = { module = "ai.koog:koog-agents", version.ref = "koog" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "dateTime" }
+androidx-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "androidx-splashscreen" }
 
 
 [plugins]

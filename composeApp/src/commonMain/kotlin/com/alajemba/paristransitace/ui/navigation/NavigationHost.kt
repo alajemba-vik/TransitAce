@@ -59,13 +59,6 @@ fun AppNavHost() {
             GameScreen(
                 userViewModel = userViewModel,
                 gameViewModel = gameViewModel,
-                onNavigateToSetup = {
-                    navController.navigate(HomeRoute) {
-                        popUpTo(GameRoute) {
-                            inclusive = true
-                        }
-                    }
-                },
                 onNavigateHome = {
                     navController.navigate(LandingRoute) {
                         popUpTo(LandingRoute) {
