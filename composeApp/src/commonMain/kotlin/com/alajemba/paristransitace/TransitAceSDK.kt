@@ -2,27 +2,51 @@ package com.alajemba.paristransitace
 
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
+import app.cash.sqldelight.coroutines.mapToOneOrNull
 import com.alajemba.paristransitace.db.ParisTransitDatabase
 import com.alajemba.paristransitace.entity.ChatMessageEntity
+import com.alajemba.paristransitace.model.GameSetting
 import com.alajemba.paristransitace.network.LLMApi
 import com.alajemba.paristransitace.network.models.ApiResponse
 import com.alajemba.paristransitace.ui.model.ChatMessageSender
 import com.alajemba.paristransitace.ui.model.GameSetup.GameLanguage
 import com.alajemba.paristransitace.ui.model.Scenario
+import com.alajemba.paristransitace.ui.model.ScenarioTheme
+import com.alajemba.paristransitace.ui.model.StoryLine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.transform
+import kotlinx.serialization.json.Json
 import kotlin.time.Clock
 
 internal class TransitAceSDK(
     private val database: ParisTransitDatabase,
     private val llmApi: LLMApi
 ) {
-    val queries = database.parisTransitDatabaseQueries
+    private val dbQueries = database.parisTransitDatabaseQueries
+    private val json = Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+    }
 
-    private val dbQuery = database.parisTransitDatabaseQueries
+    // Settings
+    fun <T> saveSetting(key: GameSetting<T>, value: String) {
+        println("Saving setting: ${key.key} = $value")
+        dbQueries.insertSetting(key.key, value)
+    }
 
+    fun <T> getSetting(key: GameSetting<T>): Flow<T> {
+        return dbQueries.getSetting(key.key).asFlow().mapToOneOrNull(Dispatchers.Default).map {
+            value ->  key.toValue(value ?: "")
+        }
+    }
+
+
+
+    // Chat
     internal fun getAllChatMessages(): Flow<List<ChatMessageEntity>> {
-        return dbQuery.selectAllChatMessages({ id, sender, message, timestamp ->
+        return dbQueries.selectAllChatMessages({ id, sender, message, timestamp ->
             ChatMessageEntity(
                 sender = sender,
                 message = message,
@@ -32,11 +56,11 @@ internal class TransitAceSDK(
     }
 
     internal fun clearChat() {
-        dbQuery.removeAllChatMessages()
+        dbQueries.removeAllChatMessages()
     }
 
     suspend fun sendChatMessage(message: String, sender: String): ApiResponse<*> {
-        dbQuery.insertChatMessage(
+        dbQueries.insertChatMessage(
             id = null,
             sender = sender,
             message = message,
@@ -49,7 +73,7 @@ internal class TransitAceSDK(
 
         val message = if (response.data.isNullOrBlank()) "Sophia is on a cigarette break. (Connection Error)" else response.data
 
-        dbQuery.insertChatMessage(
+        dbQueries.insertChatMessage(
             id = null,
             sender = ChatMessageSender.AI.name,
             message = message,
@@ -59,6 +83,9 @@ internal class TransitAceSDK(
         return response
     }
 
+
+
+    // Scenarios
     suspend fun generateScenarios(transitRulesJson: String, language: GameLanguage): ApiResponse<List<Scenario>> {
         return llmApi.generateScenario(
             transitRulesJson = transitRulesJson,
@@ -66,8 +93,70 @@ internal class TransitAceSDK(
         )
     }
 
+    fun saveStoryLine(storyLine: StoryLine, scenarios: List<Scenario>){
+        database.transaction {
+            dbQueries.insertStory(
+                title = storyLine.title,
+                timeCreated = Clock.System.now().toEpochMilliseconds(),
+                description = storyLine.description
+            )
+
+            dbQueries.deleteScenariosForStory(storyLine.title)
+
+            scenarios.forEach { scenario ->
+                val optionsJson = json.encodeToString(scenario.options)
+
+                dbQueries.insertScenario(
+                    id = scenario.id,
+                    title = scenario.title,
+                    description = scenario.description,
+                    options_json = optionsJson,
+                    correctOptionId = scenario.correctOptionId,
+                    nextScenarioId = scenario.nextScenarioId,
+                    currentIndexInGame = scenario.currentIndexInGame.toLong(),
+                    scenarioTheme = scenario.scenarioTheme.name,
+                    parent_story_title = storyLine.title,
+                )
+            }
+        }
+    }
+
+    fun loadScenariosForStoryLine(storyTitle: String): List<Scenario> {
+        return dbQueries.selectAllScenariosForStory(storyTitle).executeAsList().map { entity ->
+            Scenario(
+                id = entity.id,
+                title = entity.title,
+                description = entity.description,
+                options = json.decodeFromString(entity.options_json),
+                correctOptionId = entity.correctOptionId,
+                nextScenarioId = entity.nextScenarioId,
+                currentIndexInGame = entity.currentIndexInGame.toInt(),
+                scenarioTheme = try {
+                    ScenarioTheme.valueOf(entity.scenarioTheme)
+                } catch (e: Exception) {
+                    ScenarioTheme.DEFAULT
+                }
+            )
+        }
+    }
 
 
+    fun getAllStories(): List<StoryLine> {
+        return dbQueries.selectAllStories().executeAsList().map { entity ->
+            StoryLine(
+                title = entity.title,
+                description = entity.description ?: "",
+                timeCreated = entity.timeCreated,
+            )
+        }
+    }
 
+
+    fun deleteStory(storyTitle: String) {
+        database.transaction {
+            dbQueries.deleteScenariosForStory(storyTitle)
+            dbQueries.deleteStory(storyTitle)
+        }
+    }
 
 }

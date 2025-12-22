@@ -3,6 +3,7 @@ package com.alajemba.paristransitace.ui.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alajemba.paristransitace.TransitAceSDK
+import com.alajemba.paristransitace.model.GameSetting
 import com.alajemba.paristransitace.ui.model.ChatMessageSender
 import com.alajemba.paristransitace.ui.model.GameSetup.GameLanguage
 import com.alajemba.paristransitace.ui.model.GameSetup
@@ -18,6 +19,26 @@ internal class UserViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
     private val _gameSetupState = MutableStateFlow(GameSetup.EMPTY)
     val gameSetupState = _gameSetupState.asStateFlow()
 
+    init {
+        viewModelScope.launch {
+            transitAceSDK.getSetting(GameSetting.Language).collect {
+
+                println("Loaded language setting: $it")
+
+                _gameSetupState.value = _gameSetupState.value.copy(
+                    language = it
+                )
+            }
+
+            transitAceSDK.getSetting(GameSetting.PlayerName).collect {
+                println("Loaded player name setting: $it")
+                _gameSetupState.value = _gameSetupState.value.copy(
+                    name = it
+                )
+            }
+        }
+    }
+
     fun setupGame(
         input: String= "",
         scenariosGenerationStatus: GameSetup.ScenarioGenerationStatus = GameSetup.ScenarioGenerationStatus.NOT_STARTED
@@ -32,6 +53,7 @@ internal class UserViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
                         _gameSetupState.value = gameSetupState.value.copy(
                             language = if (isEnglish) GameLanguage.ENGLISH else GameLanguage.FRENCH
                         )
+                        transitAceSDK.saveSetting(GameSetting.Language, gameSetupState.value.language.name)
                     }
                 }
 
@@ -39,6 +61,7 @@ internal class UserViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
 
             _gameSetupState.value.isOnNameStep -> {
                 _gameSetupState.value = gameSetupState.value.copy(name = input)
+                transitAceSDK.saveSetting(GameSetting.PlayerName, gameSetupState.value.name)
             }
 
             _gameSetupState.value.isOnSelectSimulationStep -> {
@@ -86,6 +109,8 @@ internal class UserViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
             }
 
         }
+
+
 
         return _gameSetupState.value
 

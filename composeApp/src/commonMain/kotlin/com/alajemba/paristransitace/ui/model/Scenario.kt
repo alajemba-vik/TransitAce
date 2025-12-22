@@ -3,6 +3,13 @@ package com.alajemba.paristransitace.ui.model
 import kotlinx.serialization.Serializable
 
 @Serializable
+data class StoryLine(
+    val title: String,
+    val description: String,
+    val timeCreated: Long?
+)
+
+@Serializable
 data class Scenario(
     val id: String,
     val title: String,
