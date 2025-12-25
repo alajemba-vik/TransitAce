@@ -13,6 +13,9 @@ VALUES (?, ?);
 selectAllSettings:
 SELECT * FROM Settings;
 
+removeAllSettings:
+DELETE FROM Settings;
+
 
 
 CREATE TABLE StoryEntity (
@@ -62,14 +65,18 @@ CREATE TABLE ChatMessages (
     id INTEGER NOT NULL PRIMARY KEY,
     sender TEXT NOT NULL,
     message TEXT NOT NULL,
-    timestamp INTEGER DEFAULT CURRENT_TIMESTAMP
+    timestamp INTEGER DEFAULT CURRENT_TIMESTAMP,
+    actions TEXT,
+    selectedActionName TEXT
 );
-
 insertChatMessage:
-INSERT INTO ChatMessages (id, sender, message, timestamp) VALUES (?,?,?, ?);
+INSERT INTO ChatMessages (id, sender, message, timestamp, actions, selectedActionName) VALUES (?,?,?, ?, ?,?);
 
 removeAllChatMessages:
 DELETE FROM ChatMessages;
 
 selectAllChatMessages:
 SELECT * FROM ChatMessages;
+
+lastInsertedChatMessageId:
+SELECT last_insert_rowid();

@@ -38,6 +38,8 @@
     <string name="landing_footer">UN JEU VIKI-J • VIVEZ VOTRE VIE\n• JEU ÉDUCATIF • NE PAS COLLECTER DE DONNÉES PERSONNELLES •\nÉTABLI EN 2025</string>
     <string name="home_button_acc_description">Retour à l'accueil</string>
     <string name="landing_skip_intro">PASSER L'INTRO &gt;&gt;</string>
+    <string name="play_custom_scenario_button_label">Lancer</string>
+    <string name="save_custom_scenario_button_label">Sauver</string>
 
     <string name="game_screen_on_home_click_dialog_text">Attendez ! Si vous retournez au terminal maintenant, toute votre progression dans la mission sera perdue.\n\nÊtes-vous sûr de vouloir annuler ?</string>
 

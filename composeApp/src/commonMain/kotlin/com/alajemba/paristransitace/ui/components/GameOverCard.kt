@@ -29,6 +29,7 @@ import com.alajemba.paristransitace.ui.theme.RetroAmber
 import com.alajemba.paristransitace.ui.theme.VoidBlack
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import paristransitace.composeapp.generated.resources.Res
 import paristransitace.composeapp.generated.resources.*
 import kotlin.random.Random
@@ -133,7 +134,7 @@ fun GameOverCard(
             .background(VoidBlack)
             .statusBarsPadding()
             .safeDrawingPadding()
-            .padding(Dimens.Space.medium)
+            .padding(vertical = Dimens.Space.medium)
     ) {
         Spacer(modifier = Modifier.height(Dimens.Space.large))
 
@@ -141,7 +142,7 @@ fun GameOverCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .border(Dimens.Border.thin, RetroAmber)
-                .padding(vertical = Dimens.Space.large)
+                .padding(vertical = Dimens.Space.large, horizontal = Dimens.Space.medium)
         ) {
             Column {
                 Text(
@@ -250,4 +251,18 @@ private fun ReportRow(label: String, value: String, valueColor: Color) {
         )
     }
     HorizontalDivider(color = Color.Gray.copy(alpha = 0.1f), thickness = 1.dp)
+}
+
+
+@Preview
+@Composable
+fun GameOverCardPreview() {
+    GameOverCard(
+        money = -150000.0,
+        morale = 45,
+        legalInfractions = 3,
+        grade = "D",
+        reason = "Your mismanagement has led to widespread dissatisfaction among the citizens.",
+        onRestart = {}
+    )
 }

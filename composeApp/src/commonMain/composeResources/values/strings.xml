@@ -37,6 +37,8 @@
     <string name="landing_begin_simulation">BEGIN SIMULATION</string>
     <string name="landing_footer">A VIKI-JE GAME • LIVE LIFE\n• EDUCATIONAL GAME • NOT FOR COLLECTING PII •\nEST. 2025</string>
     <string name="landing_skip_intro">[ SKIP INTRO >> ]</string>
+    <string name="play_custom_scenario_button_label">Run</string>
+    <string name="save_custom_scenario_button_label">Save</string>
 
     <string name="game_screen_on_home_click_dialog_text">Wait! If you return to the terminal now, all mission progress will be lost.\n\nAre you sure you want to abort?</string>
     <!-- GameOverCard strings -->

@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.alajemba.paristransitace.ui.components.AnimatedGameOverOverlay
 import com.alajemba.paristransitace.ui.components.AnimatedScenarioImage
+import com.alajemba.paristransitace.ui.components.HomeButton
 import com.alajemba.paristransitace.ui.components.StatsBar
 import com.alajemba.paristransitace.ui.components.TypewriterText
 import com.alajemba.paristransitace.ui.components.dialogs.AISpeechBubble
@@ -48,6 +49,10 @@ internal fun GameScreen(
     val currentScenarioState = gameViewModel.currentScenario.collectAsState()
     var showOnHomeClickDialog by remember { mutableStateOf(false) }
 
+    fun goHome(){
+        onNavigateHome()
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -61,7 +66,11 @@ internal fun GameScreen(
             progress = gameViewModel.scenarioProgress.value,
             progressText =gameViewModel.scenarioProgressText.collectAsState("").value,
             onHomeClick = {
-                showOnHomeClickDialog = true
+                if (gameViewModel.scenarioProgress.value >= 1f) {
+                     goHome()
+                } else {
+                    showOnHomeClickDialog = true
+                }
             }
         )
 
@@ -132,9 +141,8 @@ internal fun GameScreen(
             AISpeechBubble(
                 text = stringResource(Res.string.game_screen_on_home_click_dialog_text),
                 onConfirm = {
-                    onNavigateHome()
-                    userViewModel.resetUserStats()
-                    userViewModel.clearAllInfo()
+                    goHome()
+                    showOnHomeClickDialog = false
                 },
                 onDismiss = { showOnHomeClickDialog = false },
                 titleLabel = stringResource(Res.string.ai_says),
@@ -301,16 +309,7 @@ private fun ScreenHeader(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(end = Dimens.Space.small)
             ) {
-                val iconSize = 38.dp
-
-                IconButton(
-                    onClick = onHomeClick, modifier = Modifier.size(iconSize)) {
-                    Icon(
-                        imageVector = Icons.Outlined.Home,
-                        contentDescription = stringResource(Res.string.home_button_acc_description),
-                        tint = RetroAmber.copy(alpha = 0.7f)
-                    )
-                }
+                HomeButton(onHomeClick)
 
                 Spacer(modifier = Modifier.width(Dimens.Space.small))
 

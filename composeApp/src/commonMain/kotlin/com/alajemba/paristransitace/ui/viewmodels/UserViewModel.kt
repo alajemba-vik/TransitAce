@@ -7,6 +7,7 @@ import com.alajemba.paristransitace.model.GameSetting
 import com.alajemba.paristransitace.ui.model.ChatMessageSender
 import com.alajemba.paristransitace.ui.model.GameSetup.GameLanguage
 import com.alajemba.paristransitace.ui.model.GameSetup
+import com.alajemba.paristransitace.ui.model.GameSetup.ScenarioGenerationStatus
 import com.alajemba.paristransitace.ui.model.UserStats
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,30 +20,37 @@ internal class UserViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
     private val _gameSetupState = MutableStateFlow(GameSetup.EMPTY)
     val gameSetupState = _gameSetupState.asStateFlow()
 
+    var gameSetupPlot = ""
+        private set
+
     init {
         viewModelScope.launch {
+            println("beginning with this input: ${_gameSetupState.value}")
+
             transitAceSDK.getSetting(GameSetting.Language).collect {
 
                 println("Loaded language setting: $it")
 
                 _gameSetupState.value = _gameSetupState.value.copy(
-                    language = it
+                    language = it ?: GameLanguage.UNDEFINED
                 )
             }
 
             transitAceSDK.getSetting(GameSetting.PlayerName).collect {
                 println("Loaded player name setting: $it")
                 _gameSetupState.value = _gameSetupState.value.copy(
-                    name = it
+                    name = it ?: ""
                 )
             }
         }
     }
 
+
     fun setupGame(
         input: String= "",
-        scenariosGenerationStatus: GameSetup.ScenarioGenerationStatus = GameSetup.ScenarioGenerationStatus.NOT_STARTED
+        scenariosGenerationStatus: ScenarioGenerationStatus = ScenarioGenerationStatus.NOT_STARTED
     ): GameSetup {
+        println("Setting up game with input: ${_gameSetupState.value}")
         when {
             _gameSetupState.value.isOnLanguageStep -> {
                 input.trim().lowercase().let { cleanedInput ->
@@ -78,17 +86,18 @@ internal class UserViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
                 if (simulationType != GameSetup.SimulationType.UNDEFINED) {
                     _gameSetupState.value = gameSetupState.value.copy(simulationType = simulationType)
                 }
-
-                // Default simulation has already been generated
-                /*if (!_gameSetupState.value.isCustomSimulation) {
-                    _gameSetupState.value = gameSetupState.value.copy(
-                        scenariosGenerationStatus = GameSetup.ScenarioGenerationStatus.SUCCESS
-                    )
-                }*/
             }
 
             _gameSetupState.value.isOnScenariosGenerationStep-> {
+                println("Setting scenario generation status to $scenariosGenerationStatus")
                 _gameSetupState.value = gameSetupState.value.copy(scenariosGenerationStatus = scenariosGenerationStatus)
+            }
+
+            _gameSetupState.value.isOnScenariosGenRequirementsStep -> {
+                if (input.isNotBlank()) {
+                    gameSetupPlot = input
+                    _gameSetupState.value = gameSetupState.value.copy(scenariosGenerationStatus = ScenarioGenerationStatus.PROCESSING)
+                }
             }
 
             _gameSetupState.value.isOnScenariosGenerationFailureStep  -> {
@@ -106,6 +115,10 @@ internal class UserViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
                         scenariosGenerationStatus = GameSetup.ScenarioGenerationStatus.NOT_STARTED
                     )
                 }
+            }
+
+            _gameSetupState.value.isOnScenariosGenerationSuccessStep  -> {
+                _gameSetupState.value = gameSetupState.value.copy(scenariosGenerationStatus = scenariosGenerationStatus)
             }
 
         }
@@ -141,7 +154,9 @@ internal class UserViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
 
     fun clearAllInfo() {
         transitAceSDK.clearChat()
+        transitAceSDK.clearSettings()
         resetUserStats()
+        _gameSetupState.value = GameSetup.EMPTY
     }
 
 }

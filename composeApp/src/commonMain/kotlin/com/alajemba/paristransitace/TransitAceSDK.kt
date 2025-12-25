@@ -8,15 +8,16 @@ import com.alajemba.paristransitace.entity.ChatMessageEntity
 import com.alajemba.paristransitace.model.GameSetting
 import com.alajemba.paristransitace.network.LLMApi
 import com.alajemba.paristransitace.network.models.ApiResponse
+import com.alajemba.paristransitace.ui.model.ChatMessageAction
 import com.alajemba.paristransitace.ui.model.ChatMessageSender
 import com.alajemba.paristransitace.ui.model.GameSetup.GameLanguage
 import com.alajemba.paristransitace.ui.model.Scenario
 import com.alajemba.paristransitace.ui.model.ScenarioTheme
+import com.alajemba.paristransitace.ui.model.ScenariosWrapper
 import com.alajemba.paristransitace.ui.model.StoryLine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.transform
 import kotlinx.serialization.json.Json
 import kotlin.time.Clock
 
@@ -36,36 +37,52 @@ internal class TransitAceSDK(
         dbQueries.insertSetting(key.key, value)
     }
 
-    fun <T> getSetting(key: GameSetting<T>): Flow<T> {
+    fun <T> getSetting(key: GameSetting<T>): Flow<T?> {
         return dbQueries.getSetting(key.key).asFlow().mapToOneOrNull(Dispatchers.Default).map {
-            value ->  key.toValue(value ?: "")
+            value ->  key.toValue(value).also {
+                println("In sdk Loaded setting: ${key.key} = $it")
+            }
         }
     }
 
+    fun clearSettings() {
+        dbQueries.removeAllSettings()
+    }
 
 
     // Chat
     internal fun getAllChatMessages(): Flow<List<ChatMessageEntity>> {
-        return dbQueries.selectAllChatMessages({ id, sender, message, timestamp ->
+        return dbQueries.selectAllChatMessages { id, sender, message, timestamp, actions, selectedActionName ->
             ChatMessageEntity(
                 sender = sender,
                 message = message,
-                timeSent = timestamp ?: 0L
+                timeSent = timestamp ?: 0L,
+                selectedActionName = selectedActionName,
+                actions = actions?.split(",")?.map { it.trim() } ?: emptyList()
             )
-        }).asFlow().mapToList(Dispatchers.Default)
+        }.asFlow().mapToList(Dispatchers.Default)
     }
 
     internal fun clearChat() {
         dbQueries.removeAllChatMessages()
     }
-
-    suspend fun sendChatMessage(message: String, sender: String): ApiResponse<*> {
+    fun insertChatMessage(message: String, sender: String, actions: List<ChatMessageAction> = emptyList()){
         dbQueries.insertChatMessage(
             id = null,
             sender = sender,
             message = message,
             timestamp = Clock.System.now().toEpochMilliseconds(),
+            actions = actions.joinToString(),
+            selectedActionName = null
         )
+    }
+    
+    suspend fun updateChatMessage(selectedActionDescription: String?) {
+
+    }
+
+    suspend fun sendChatMessage(message: String, sender: String): ApiResponse<*> {
+        insertChatMessage(message, sender)
 
         val response = llmApi.sendChatMessage(message)
 
@@ -73,12 +90,7 @@ internal class TransitAceSDK(
 
         val message = if (response.data.isNullOrBlank()) "Sophia is on a cigarette break. (Connection Error)" else response.data
 
-        dbQueries.insertChatMessage(
-            id = null,
-            sender = ChatMessageSender.AI.name,
-            message = message,
-            timestamp = Clock.System.now().toEpochMilliseconds(),
-        )
+        insertChatMessage(message, ChatMessageSender.AI.name)
 
         return response
     }
@@ -86,10 +98,12 @@ internal class TransitAceSDK(
 
 
     // Scenarios
-    suspend fun generateScenarios(transitRulesJson: String, language: GameLanguage): ApiResponse<List<Scenario>> {
-        return llmApi.generateScenario(
+    suspend fun generateScenarios(transitRulesJson: String, language: GameLanguage, plot: String): ApiResponse<ScenariosWrapper> {
+        println("Generating scenarios for language: $transitRulesJson")
+        return llmApi.generateScenarios(
             transitRulesJson = transitRulesJson,
-            language = language
+            language = language,
+            plot = plot
         )
     }
 

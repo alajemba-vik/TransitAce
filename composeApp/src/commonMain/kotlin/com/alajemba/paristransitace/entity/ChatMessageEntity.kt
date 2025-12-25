@@ -10,5 +10,9 @@ data class ChatMessageEntity(
     @SerialName("message")
     val message: String,
     @SerialName("timestamp")
-    val timeSent: Long
+    val timeSent: Long,
+    @SerialName("actions")
+    val actions: List<String>?,
+    @SerialName("selectedActionName")
+    val selectedActionName: String?
 )

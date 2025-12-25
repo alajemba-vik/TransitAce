@@ -11,6 +11,8 @@ import com.alajemba.paristransitace.ui.model.GameSetup.GameLanguage
 import com.alajemba.paristransitace.ui.model.Scenario
 import com.alajemba.paristransitace.ui.model.ScenarioOption
 import com.alajemba.paristransitace.ui.model.ScenarioTheme
+import com.alajemba.paristransitace.ui.model.StoryLine
+import io.ktor.client.plugins.logging.EMPTY
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
@@ -21,6 +23,7 @@ internal class GameViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
     private val _uiDataState = MutableStateFlow<UIDataState>(UIDataState.Loading)
     val gameDataState = _uiDataState.asStateFlow()
 
+    private var _currentStoryLine = StoryLine.EMPTY
     private val _scenariosState = MutableStateFlow(emptyList<Scenario>())
 
     private val _currentScenario = MutableStateFlow<Scenario?>(null)
@@ -28,6 +31,10 @@ internal class GameViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
 
     private val _scenarioProgress = MutableStateFlow(0f)
     val scenarioProgress = _scenarioProgress.asStateFlow()
+
+    val isScenariosCompleted = _scenarioProgress.asStateFlow().map { progress ->
+        progress >= 1f
+    }
     val scenarioProgressText = _currentScenario.asStateFlow().map { current ->
         val index = current?.currentIndexInGame ?: 0
         val total = _scenariosState.value.size
@@ -40,8 +47,15 @@ internal class GameViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
     // To persist last used custom transit rules between games
     private var lastUsedTransitRulesJson : String? = null
 
-    // TODO("move to data layer")
-    fun generateScenarios(gameSetup: GameSetup, transitRulesJson: String? = null){
+    fun clearState() {
+        _uiDataState.value = UIDataState.Idle
+    }
+
+    fun generateScenarios(
+        gameSetup: GameSetup,
+        transitRulesJson: String? = null,
+        plot: String
+    ){
 
         _uiDataState.value = UIDataState.Loading
 
@@ -55,11 +69,15 @@ internal class GameViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
             if (isCustom){
                 val aIScenariosResponse = transitAceSDK.generateScenarios(
                     transitRulesJson = transitRulesJson ?: "",
-                    language = if (isEnglish) GameLanguage.ENGLISH else GameLanguage.FRENCH
+                    language = if (isEnglish) GameLanguage.ENGLISH else GameLanguage.FRENCH,
+                    plot = plot
                 )
 
+                println("AI Scenarios Response generated: $aIScenariosResponse")
                 if (aIScenariosResponse.data != null) {
-                    _scenariosState.value = aIScenariosResponse.data
+                    _scenariosState.value = aIScenariosResponse.data.scenarios
+                    _currentStoryLine = aIScenariosResponse.data.storyLine
+
                 } else {
                     _scenariosState.value = emptyList()
                 }
@@ -76,6 +94,7 @@ internal class GameViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
     }
 
     fun startGame() {
+        clearState()
         _currentScenario.value = null
         _scenarioProgress.value = 0f
         nextScenario()
@@ -143,6 +162,10 @@ internal class GameViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
             'F' -> if (legalInfractionsCount >= 3) "Deported. Three strikes and you are out." else "Paris chewed you up and spit you out."
             else -> "Unknown fate."
         }
+    }
+
+    fun saveGeneratedCustomScenarios() {
+
     }
 
 

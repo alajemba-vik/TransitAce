@@ -7,7 +7,25 @@ data class StoryLine(
     val title: String,
     val description: String,
     val timeCreated: Long?
-)
+) {
+    companion object {
+        val EMPTY = StoryLine(
+            title = "",
+            description = "",
+            timeCreated = null
+        )
+    }
+}
+
+value class ScenariosWrapper (
+    val wrapper: Pair<StoryLine, List<Scenario>>
+){
+    val storyLine: StoryLine
+        get() = wrapper.first
+
+    val scenarios: List<Scenario>
+        get() = wrapper.second
+}
 
 @Serializable
 data class Scenario(

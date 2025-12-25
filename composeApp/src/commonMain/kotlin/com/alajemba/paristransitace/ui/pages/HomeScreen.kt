@@ -3,9 +3,7 @@ package com.alajemba.paristransitace.ui.pages
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -13,13 +11,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import com.alajemba.paristransitace.ui.components.AIChatWindow
+import com.alajemba.paristransitace.ui.components.HomeButton
 import com.alajemba.paristransitace.ui.components.StatsBar
-import com.alajemba.paristransitace.ui.model.AIStatus
-import com.alajemba.paristransitace.ui.model.ChatMessageSender
-import com.alajemba.paristransitace.ui.model.ChatUiModel
-import com.alajemba.paristransitace.ui.model.GameSetup
-import com.alajemba.paristransitace.ui.model.UIDataState
-import com.alajemba.paristransitace.ui.model.UserStats
+import com.alajemba.paristransitace.ui.model.*
 import com.alajemba.paristransitace.ui.theme.Dimens
 import com.alajemba.paristransitace.ui.theme.VoidBlack
 import com.alajemba.paristransitace.ui.viewmodels.ChatViewModel
@@ -27,13 +21,7 @@ import com.alajemba.paristransitace.ui.viewmodels.GameViewModel
 import com.alajemba.paristransitace.ui.viewmodels.UserViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
 import paristransitace.composeapp.generated.resources.Res
-import paristransitace.composeapp.generated.resources.chat_window_initial_message
-import paristransitace.composeapp.generated.resources.connected
-import paristransitace.composeapp.generated.resources.connecting_ellipsis
-import paristransitace.composeapp.generated.resources.disconnected
 
 @Composable
 internal fun HomeScreen(
@@ -41,13 +29,10 @@ internal fun HomeScreen(
     gameViewModel: GameViewModel,
     onStartGame: () -> Unit,
     userViewModel: UserViewModel,
+    goBack: (() -> Unit)?
 ) {
 
-    val welcomeMessage = stringResource(Res.string.chat_window_initial_message)
-
     LaunchedEffect(Unit) {
-        chatViewModel.setWelcomeMessage(welcomeMessage)
-
         launch {
             userViewModel.gameSetupState.collect { gameSetupState ->
                 when {
@@ -58,10 +43,18 @@ internal fun HomeScreen(
                             transiteRulesFile = Res.readBytes("files/transit_rules.json").decodeToString()
                         }
 
-                        gameViewModel.generateScenarios(gameSetupState, transiteRulesFile)
+                        gameViewModel.generateScenarios(
+                            gameSetupState,
+                            transiteRulesFile,
+                            plot = userViewModel.gameSetupPlot
+                        )
                     }
 
                     gameSetupState.isOnScenariosGenerationFailureStep -> {
+                        chatViewModel.setupGame(gameSetupState)
+                    }
+
+                    gameSetupState.isOnScenariosGenerationSuccessStep -> {
                         chatViewModel.setupGame(gameSetupState)
                     }
 
@@ -77,6 +70,7 @@ internal fun HomeScreen(
         launch {
             gameViewModel.gameDataState.collect { gameDataValue ->
                 if (gameDataValue is UIDataState.Success.ScenariosGenerated) {
+                    println("Scenarios generated successfully.")
                     userViewModel.setupGame(scenariosGenerationStatus = GameSetup.ScenarioGenerationStatus.SUCCESS)
                 } else if (gameDataValue is UIDataState.Error) {
                     userViewModel.setupGame(scenariosGenerationStatus = GameSetup.ScenarioGenerationStatus.FAILURE)
@@ -89,12 +83,21 @@ internal fun HomeScreen(
         userStats = chatViewModel.userStatsState.collectAsState().value,
         chats = chatViewModel.chatMessages.collectAsState().value,
         onSend = { message ->
-            chatViewModel.attachNewMessage(message, ChatMessageSender.USER)
+            chatViewModel.attachUserNewMessage(message)
             chatViewModel.setupGame(userViewModel.setupGame(message))
         },
+        onBack = goBack,
         showUnknownState = true,
         isNewMessageEnabled = !userViewModel.gameSetupState.collectAsState().value.isSetupComplete &&
-        !chatViewModel.isLoading.collectAsState(false).value
+        !chatViewModel.isLoading.collectAsState(false).value,
+        onPlay = {
+            userViewModel.setupGame(scenariosGenerationStatus = GameSetup.ScenarioGenerationStatus.SCENARIOS_GENERATED_ACTION)
+            onStartGame()
+        },
+        onSave = {
+            gameViewModel.saveGeneratedCustomScenarios()
+            userViewModel.setupGame(scenariosGenerationStatus = GameSetup.ScenarioGenerationStatus.SCENARIOS_GENERATED_ACTION)
+        }
     )
 }
 
@@ -108,10 +111,16 @@ private fun ScreenContent(
     onCommsClicked: () -> Unit = {},
     onMapsClicked: () -> Unit = {},
     userStats: UserStats,
+    onPlay: () -> Unit,
+    onSave: () -> Unit,
+    onBack: (() -> Unit)?,
 ) {
     Scaffold(
         topBar =  {
             TopAppBar(
+                navigationIcon = {
+                    onBack?.let {  HomeButton(onHomeClick = it) }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = VoidBlack),
                 title = {
                     StatsBar(
@@ -131,7 +140,13 @@ private fun ScreenContent(
             chatMessages = chats,
             onSend = onSend,
             modifier = Modifier.padding(it),
-            isNewMessageEnabled = isNewMessageEnabled
+            isNewMessageEnabled = isNewMessageEnabled,
+            onChatMessageAction = { action ->
+                when (action) {
+                    ChatMessageAction.PLAY_SCENARIO -> onPlay()
+                    ChatMessageAction.SAVE_SCENARIO -> onSave()
+                }
+            },
         )
 
     }

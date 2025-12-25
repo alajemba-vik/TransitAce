@@ -1,6 +1,7 @@
 package com.alajemba.paristransitace.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -38,6 +39,12 @@ fun AppNavHost() {
 
                 }
             )
+
+            LaunchedEffect(Unit){
+                gameViewModel.clearState()
+                userViewModel.clearAllInfo()
+                chatViewModel.clearAllChats()
+            }
         }
 
         composable<HomeRoute> {
@@ -45,6 +52,13 @@ fun AppNavHost() {
                 chatViewModel = chatViewModel,
                 userViewModel = userViewModel,
                 gameViewModel = gameViewModel,
+                goBack = {
+                    navController.navigate(LandingRoute) {
+                        popUpTo(HomeRoute) {
+                            inclusive = true
+                        }
+                    }
+                },
                 onStartGame = {
                     navController.navigate(GameRoute) {
                         popUpTo(HomeRoute) {
