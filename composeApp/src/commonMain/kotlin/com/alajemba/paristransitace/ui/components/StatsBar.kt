@@ -29,10 +29,8 @@ import paristransitace.composeapp.generated.resources.map
 fun StatsBar(
     userStats: UserStats,
     showUnknownState: Boolean = false,
-    isMapEnabled: Boolean = false,
     isCommsEnabled: Boolean = true,
     onCommsClicked: () -> Unit,
-    onMapsClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -65,11 +63,6 @@ fun StatsBar(
             Spacer(modifier = Modifier.width(Dimens.Space.small))
 
             HeaderTab(
-                stringResource(Res.string.map).uppercase(),
-                active = isMapEnabled && !showUnknownState,
-                onClick = onMapsClicked
-            )
-            HeaderTab(
                 stringResource(Res.string.comms).uppercase(),
                 active = isCommsEnabled && !showUnknownState,
                 onClick = onCommsClicked
@@ -91,12 +84,12 @@ fun HeaderTab(
         modifier = Modifier
             .border(Dimens.Border.thin, if (active) RetroAmber else Color.Gray.copy(alpha = 0.5f))
             .background(if (active) RetroAmber.copy(alpha = 0.2f) else Color.Transparent)
-            .padding(horizontal = 6.dp, vertical = 2.dp)
             .clickable(onClick = onClick)
+            .padding(horizontal = 6.dp, vertical = 2.dp)
     ) {
         Text(
             text = text,
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.labelMedium,
             color = if (active) RetroAmber else Color.Gray
         )
     }

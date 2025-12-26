@@ -24,6 +24,8 @@ internal class GameViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
     val gameDataState = _uiDataState.asStateFlow()
 
     private var _currentStoryLine = StoryLine.EMPTY
+    val storyLine: StoryLine
+        get() = _currentStoryLine
     private val _scenariosState = MutableStateFlow(emptyList<Scenario>())
 
     private val _currentScenario = MutableStateFlow<Scenario?>(null)
@@ -47,6 +49,12 @@ internal class GameViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
     // To persist last used custom transit rules between games
     private var lastUsedTransitRulesJson : String? = null
 
+    fun getGameContext(): String {
+        return """
+            Context title: ${_currentStoryLine.title} 
+            |Context description${_currentStoryLine.description}
+            """.trimIndent()
+    }
     fun clearState() {
         _uiDataState.value = UIDataState.Idle
     }

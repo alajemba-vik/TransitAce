@@ -21,7 +21,9 @@ DELETE FROM Settings;
 CREATE TABLE StoryEntity (
     title TEXT NOT NULL PRIMARY KEY,
     timeCreated INTEGER DEFAULT CURRENT_TIMESTAMP,
-    description TEXT
+    description TEXT,
+    initialBudget REAL,
+    initialMorale INTEGER
 );
 
 CREATE TABLE ScenarioEntity (
@@ -38,8 +40,8 @@ CREATE TABLE ScenarioEntity (
 );
 
 insertStory:
-INSERT OR REPLACE INTO StoryEntity(title, timeCreated, description)
-VALUES (?, ?, ?);
+INSERT OR REPLACE INTO StoryEntity(title, timeCreated, description, initialBudget, initialMorale)
+VALUES (?, ?, ?, ?, ?);
 
 insertScenario:
 INSERT OR REPLACE INTO ScenarioEntity(
@@ -71,6 +73,11 @@ CREATE TABLE ChatMessages (
 );
 insertChatMessage:
 INSERT INTO ChatMessages (id, sender, message, timestamp, actions, selectedActionName) VALUES (?,?,?, ?, ?,?);
+
+updateChatMessageSelectedAction:
+UPDATE ChatMessages
+SET selectedActionName = :selectedActionName
+WHERE id = :id;
 
 removeAllChatMessages:
 DELETE FROM ChatMessages;

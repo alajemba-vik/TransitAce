@@ -54,6 +54,7 @@ internal class TransitAceSDK(
     internal fun getAllChatMessages(): Flow<List<ChatMessageEntity>> {
         return dbQueries.selectAllChatMessages { id, sender, message, timestamp, actions, selectedActionName ->
             ChatMessageEntity(
+                id = id,
                 sender = sender,
                 message = message,
                 timeSent = timestamp ?: 0L,
@@ -77,18 +78,35 @@ internal class TransitAceSDK(
         )
     }
     
-    suspend fun updateChatMessage(selectedActionDescription: String?) {
-
+    suspend fun updateChatMessage(selectedActionName: String, messageIdToUpdate: Long) {
+        dbQueries.updateChatMessageSelectedAction(
+            selectedActionName = selectedActionName,
+            id = messageIdToUpdate
+        )
     }
 
-    suspend fun sendChatMessage(message: String, sender: String): ApiResponse<*> {
+    suspend fun sendUserChatMessage(
+        message: String,
+        sender: String,
+        isFrench: Boolean,
+        gameContext: String? = null
+    ): ApiResponse<*> {
         insertChatMessage(message, sender)
 
-        val response = llmApi.sendChatMessage(message)
+        val history = dbQueries.selectAllChatMessages().executeAsList()
+
+        val response = llmApi.sendUserChatMessage(message, history, gameContext)
 
         println(response.data)
 
-        val message = if (response.data.isNullOrBlank()) "Sophia is on a cigarette break. (Connection Error)" else response.data
+        val message = if (response.data.isNullOrBlank()) {
+            val message = if (isFrench) {
+                "Une erreur est survenue. Sophia pourrait être en pause cigarette. (Erreur de connexion)"
+            } else {
+                "There was an error. Sophia might be on a cigarette break. (Connection Error)"
+            }
+            message
+        } else response.data
 
         insertChatMessage(message, ChatMessageSender.AI.name)
 
@@ -112,7 +130,9 @@ internal class TransitAceSDK(
             dbQueries.insertStory(
                 title = storyLine.title,
                 timeCreated = Clock.System.now().toEpochMilliseconds(),
-                description = storyLine.description
+                description = storyLine.description,
+                initialBudget = storyLine.initialBudget,
+                initialMorale = storyLine.initialMorale.toLong()
             )
 
             dbQueries.deleteScenariosForStory(storyLine.title)
@@ -161,6 +181,8 @@ internal class TransitAceSDK(
                 title = entity.title,
                 description = entity.description ?: "",
                 timeCreated = entity.timeCreated,
+                initialBudget = entity.initialBudget ?: .0,
+                initialMorale = entity.initialMorale?.toInt() ?: 0
             )
         }
     }

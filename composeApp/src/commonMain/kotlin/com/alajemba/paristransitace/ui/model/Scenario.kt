@@ -6,13 +6,17 @@ import kotlinx.serialization.Serializable
 data class StoryLine(
     val title: String,
     val description: String,
-    val timeCreated: Long?
+    val timeCreated: Long?,
+    val initialBudget: Double,
+    val initialMorale: Int
 ) {
     companion object {
         val EMPTY = StoryLine(
             title = "",
             description = "",
-            timeCreated = null
+            timeCreated = null,
+            initialBudget = 0,
+            initialMorale = 0
         )
     }
 }

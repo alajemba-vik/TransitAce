@@ -50,18 +50,17 @@ internal fun HomeScreen(
                         )
                     }
 
-                    gameSetupState.isOnScenariosGenerationFailureStep -> {
-                        chatViewModel.setupGame(gameSetupState)
-                    }
+                    gameSetupState.isOnScenariosGenerationSuccessStep ||
+                            gameSetupState.isOnScenariosGenerationFailureStep || gameSetupState.isSetupComplete -> {
+                        chatViewModel.setupGame(
+                            gameSetupState,
+                            gameViewModel.storyLine
+                        )
 
-                    gameSetupState.isOnScenariosGenerationSuccessStep -> {
-                        chatViewModel.setupGame(gameSetupState)
-                    }
-
-                    gameSetupState.isSetupComplete -> {
-                        chatViewModel.setupGame(gameSetupState)
-                        delay(3000L)
-                        onStartGame()
+                        if (gameSetupState.isSetupComplete) {
+                            if (!gameSetupState.isCustomSimulation ) delay(3000L)
+                            onStartGame()
+                        }
                     }
                 }
             }
@@ -84,19 +83,21 @@ internal fun HomeScreen(
         chats = chatViewModel.chatMessages.collectAsState().value,
         onSend = { message ->
             chatViewModel.attachUserNewMessage(message)
-            chatViewModel.setupGame(userViewModel.setupGame(message))
+            chatViewModel.setupGame(userViewModel.setupGame(message), gameViewModel.storyLine)
         },
         onBack = goBack,
-        showUnknownState = true,
         isNewMessageEnabled = !userViewModel.gameSetupState.collectAsState().value.isSetupComplete &&
         !chatViewModel.isLoading.collectAsState(false).value,
-        onPlay = {
-            userViewModel.setupGame(scenariosGenerationStatus = GameSetup.ScenarioGenerationStatus.SCENARIOS_GENERATED_ACTION)
-            onStartGame()
-        },
-        onSave = {
-            gameViewModel.saveGeneratedCustomScenarios()
-            userViewModel.setupGame(scenariosGenerationStatus = GameSetup.ScenarioGenerationStatus.SCENARIOS_GENERATED_ACTION)
+        onAction = { actionType: ChatMessageAction, chatUiModel: ChatUiModel ->
+            chatViewModel.updateGameMessageWithAction(actionType.name, chatUiModel.id)
+
+            if (actionType == ChatMessageAction.SAVE_SCENARIO){
+                gameViewModel.saveGeneratedCustomScenarios()
+                userViewModel.setupGame(scenariosGenerationStatus = GameSetup.ScenarioGenerationStatus.SCENARIOS_GENERATED_ACTION)
+            } else if (actionType == ChatMessageAction.PLAY_SCENARIO) {
+                userViewModel.setupGame(scenariosGenerationStatus = GameSetup.ScenarioGenerationStatus.SCENARIOS_GENERATED_ACTION)
+                onStartGame()
+            }
         }
     )
 }
@@ -107,12 +108,8 @@ private fun ScreenContent(
     chats: List<ChatUiModel>,
     onSend: (String) -> Unit,
     isNewMessageEnabled: Boolean = true,
-    showUnknownState: Boolean = false,
-    onCommsClicked: () -> Unit = {},
-    onMapsClicked: () -> Unit = {},
     userStats: UserStats,
-    onPlay: () -> Unit,
-    onSave: () -> Unit,
+    onAction: (ChatMessageAction, ChatUiModel) -> Unit,
     onBack: (() -> Unit)?,
 ) {
     Scaffold(
@@ -125,10 +122,9 @@ private fun ScreenContent(
                 title = {
                     StatsBar(
                         userStats = userStats,
-                        showUnknownState = showUnknownState,
-                        isCommsEnabled = isNewMessageEnabled,
-                        onMapsClicked = onMapsClicked,
-                        onCommsClicked = onCommsClicked,
+                        showUnknownState = true,
+                        isCommsEnabled = false,
+                        onCommsClicked = {},
                         modifier = Modifier.padding(end = Dimens.Space.medium, start = Dimens.Space.tiny)
                     )
                 }
@@ -141,12 +137,7 @@ private fun ScreenContent(
             onSend = onSend,
             modifier = Modifier.padding(it),
             isNewMessageEnabled = isNewMessageEnabled,
-            onChatMessageAction = { action ->
-                when (action) {
-                    ChatMessageAction.PLAY_SCENARIO -> onPlay()
-                    ChatMessageAction.SAVE_SCENARIO -> onSave()
-                }
-            },
+            onChatMessageAction = onAction
         )
 
     }

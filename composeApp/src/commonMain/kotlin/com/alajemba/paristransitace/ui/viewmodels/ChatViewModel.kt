@@ -8,6 +8,7 @@ import com.alajemba.paristransitace.ui.model.ChatMessageSender
 import com.alajemba.paristransitace.ui.model.ChatUiModel
 import com.alajemba.paristransitace.ui.model.UIDataState
 import com.alajemba.paristransitace.ui.model.GameSetup
+import com.alajemba.paristransitace.ui.model.StoryLine
 import com.alajemba.paristransitace.ui.model.UserStats
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,19 +30,25 @@ internal class ChatViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
             transitAceSDK.getAllChatMessages().collect { savedChatMessages ->
                 _chatMessages.value = listOf(
                     ChatUiModel(
+                        id = -1L,
                         sender = ChatMessageSender.AI,
                         message = "English(E) / Français(F) ?",
                         actions = emptyList()
                     )
                 ) + savedChatMessages.map { chatMessageEntity ->
                     ChatUiModel(
+                        id = chatMessageEntity.id,
                         sender = when (chatMessageEntity.sender) {
                             ChatMessageSender.AI.name -> ChatMessageSender.AI
                             ChatMessageSender.USER.name -> ChatMessageSender.USER
                             else -> ChatMessageSender.AI
                         },
                         message = chatMessageEntity.message,
-                        selectedActionName = chatMessageEntity.selectedActionName,
+                        selectedAction = if (!chatMessageEntity.selectedActionName.isNullOrBlank()) {
+                            ChatMessageAction.fromString(chatMessageEntity.selectedActionName)
+                        } else {
+                            null
+                        },
                         actions = chatMessageEntity.actions?.mapNotNull { ChatMessageAction.fromString(it) }
                             ?: emptyList()
                     )
@@ -67,16 +74,11 @@ internal class ChatViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
             sender.name,
             actions
         )
-        /*_chatMessages.value += ChatUiModel(
-            sender,
-            input,
-            actions
-        )*/
     }
 
-    fun setupGame(updatedGameSetup: GameSetup) {
+    fun setupGame(updatedGameSetup: GameSetup, storyLine: StoryLine? = null) {
 
-        var chatMessage: String
+        var chatMessage = ""
         val actions = mutableListOf<ChatMessageAction>()
 
         when {
@@ -98,7 +100,7 @@ internal class ChatViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
                 false -> "D'accord ${updatedGameSetup.name}. Sélectionnez votre type de simulation : Par défaut ou Personnalisé ?"
             }
 
-            updatedGameSetup.isOnScenariosGenRequirementsStep -> chatMessage = when(updatedGameSetup.isEnglish) {
+            updatedGameSetup.isOnScenariosGenRequirementsStep && updatedGameSetup.isCustomSimulation -> chatMessage = when(updatedGameSetup.isEnglish) {
                 true -> """So, what is the situation? 
                 |
                 |Briefly describe the plot or the incident for your custom scenario. We'll generate your scenarios based on your story.""".trimMargin()
@@ -118,11 +120,17 @@ internal class ChatViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
             updatedGameSetup.isOnScenariosGenerationSuccessStep && updatedGameSetup.isCustomSimulation -> {
                 chatMessage = when {
                         updatedGameSetup.isEnglish -> """I've prepared your custom scenarios. 
-                    |
+                    | 
+                    |${storyLine?.title}
+                    |${storyLine?.description}
+                    | 
                     |Do you want to archive them to play another time, or continue to start the game right now? """
                             .trimMargin()
 
                         else -> """J'ai préparé tes scénarios personnalisés. 
+                    |
+                    |${storyLine?.title}
+                    |${storyLine?.description}
                     |
                     |Tu veux les **Archiver** pour y jouer une autre fois, ou **Continuer** pour lancer le jeu maintenant ? """
                             .trimMargin()
@@ -153,24 +161,20 @@ internal class ChatViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
                     }
                 }
             }.trimMargin()
-
-            else -> chatMessage = when (updatedGameSetup.isEnglish) {
-                true -> "I refuse to respond to that, kid"
-                false -> "Je refuse de répondre à cela, gamin"
-            }
         }
 
         attachChatMessage(chatMessage, ChatMessageSender.AI, actions)
     }
 
-
-    fun sendChatMessage(message: String) {
+    fun sendInGameMessage(message: String, gameSetup: GameSetup, gameContext: String? = null) {
         viewModelScope.launch {
-            val response = transitAceSDK.sendChatMessage(message, ChatMessageSender.USER.name)
+            transitAceSDK.sendUserChatMessage(message, ChatMessageSender.USER.name, !gameSetup.isEnglish, gameContext = gameContext)
+        }
+    }
 
-            if (response.hasError) {
-                // TODO()
-            }
+    fun updateGameMessageWithAction(selectedActionName: String, messageIdToUpdate: Long) {
+        viewModelScope.launch {
+            transitAceSDK.updateChatMessage(selectedActionName, messageIdToUpdate)
         }
     }
 

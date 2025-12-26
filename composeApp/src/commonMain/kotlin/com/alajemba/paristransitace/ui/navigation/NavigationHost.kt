@@ -60,6 +60,7 @@ fun AppNavHost() {
                     }
                 },
                 onStartGame = {
+                    println("Navigating to Game Screen from Home Screen")
                     navController.navigate(GameRoute) {
                         popUpTo(HomeRoute) {
                             inclusive = true
@@ -73,6 +74,7 @@ fun AppNavHost() {
             GameScreen(
                 userViewModel = userViewModel,
                 gameViewModel = gameViewModel,
+                chatViewModel = chatViewModel,
                 onNavigateHome = {
                     navController.navigate(LandingRoute) {
                         popUpTo(LandingRoute) {
@@ -92,6 +94,6 @@ object LandingRoute
 @Serializable
 object HomeRoute
 
-
 @Serializable
 object GameRoute
+

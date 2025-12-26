@@ -5,7 +5,9 @@ import ai.koog.agents.core.agent.config.AIAgentConfig
 import ai.koog.prompt.executor.clients.google.GoogleModels
 import ai.koog.prompt.executor.llms.all.simpleGoogleAIExecutor
 import com.alajemba.paristransitace.BuildConfig
+import com.alajemba.paristransitace.db.ChatMessages
 import com.alajemba.paristransitace.network.models.*
+import com.alajemba.paristransitace.ui.model.ChatMessageSender
 import com.alajemba.paristransitace.ui.model.GameSetup.GameLanguage
 import com.alajemba.paristransitace.ui.model.Scenario
 import com.alajemba.paristransitace.ui.model.ScenarioTheme
@@ -18,9 +20,11 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlin.time.Clock
 
 class LLMApi(
     private val httpClient: HttpClient
@@ -29,6 +33,7 @@ class LLMApi(
     // kept for potential future direct HTTP use
     private val ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
     private val apiKey = BuildConfig.GEMINI_API_KEY
+
 
     private val scenarioSystemPrompt = { transitRulesJson: String, isFrench: Boolean, plot: String ->
         // build a few default scenarios to show as an example array
@@ -45,8 +50,13 @@ class LLMApi(
             $plot
 
             Output Requirements:
-            - Respond with a JSON OBJECT that contains two string values and an ARRAY (list) of Scenario objects only. No commentary. No markdown. No code fences.
-            - The first two string values MUST be named `storyLineTitle` and `storyLineDescription`.
+            - Respond with a single valid JSON OBJECT. No commentary. No markdown. No code fences.
+            - The JSON Object MUST contain the following fields:
+              1. `storyLineTitle` (String)
+              2. `storyLineDescription` (String)
+              3. `initialBudget` (Double): The initial money based on the plot difficulty and best case scenario where the user makes all the right choices.
+              4. `initialMorale` (Integer): The initial morale level based on the plot. The maximum is 100 and the minimum is 0.
+              5. `scenarios` (Array): A list of Scenario objects.
             - Each array element must match the Scenario data class exactly (id, title, description, options, correctOptionId, nextScenarioId (optional), scenarioTheme).
             - Each option must include: id, text, budgetImpact (number), moraleImpact (integer), commentary (string), inventory (array of inventory objects with name/description/imageUrl), increaseLegalInfractionsBy (integer).
 
@@ -57,15 +67,17 @@ class LLMApi(
             {
                 "storyLineTitle": "A Day in Paris",
                 "storyLineDescription": "As a 20 year old student from Tanzania who just moved to Paris, you need to improve your love life and not miss classes. You discover that the Metro system is actually a matchmaking algorithm: your crush rides the prestigious Line 1, but your university is stuck on the chaotic Line 13. You must master the 'Correspondence' to survive both.",
+                "initialBudget": 100.0,
+                "initialMorale": 35,
                 "scenarios": $exampleJsonArray
             }
-            
 
             Rules for generation:
             1. Create commute scenarios in Paris that could be realistic, but if the user's plot is an unrealistic one, YOU MUST comply.
-            2. For each scenario provide exactly 2 options: one correct and one 'trap' based on the rules.
-            3. Include 'Sophia', a sarcastic 68-year-old Parisian, in the commentary of each scenario.
-            4. Output MUST be a valid JSON object matching the Example.
+            2. Set `initialBudget` and `initialMorale` to values that match the difficulty of the plot.
+            3. For each scenario provide exactly 2 options: one correct and one 'trap' based on the rules.
+            4. Include 'Sophia', a sarcastic 68-year-old Parisian, in the commentary of each scenario.
+            5. Output MUST be a valid JSON object matching the Example.
         """.trimIndent()
     }
 
@@ -95,23 +107,27 @@ class LLMApi(
 
             val json = Json { ignoreUnknownKeys = true }
             try {
-                println("Parsing generated scenarios... ${agentResponse}")
+                println("Parsing generated scenarios... $agentResponse")
                 val jsonResponse = json.parseToJsonElement(agentResponse)
                 val storyLineTitle = jsonResponse.jsonObject["storyLineTitle"]?.jsonPrimitive?.content ?: "Untitled Story"
                 val storyLineDescription = jsonResponse.jsonObject["storyLineDescription"]?.jsonPrimitive?.content ?: ""
+                val initialBudget = jsonResponse.jsonObject["initialBudget"]?.jsonPrimitive?.doubleOrNull ?: .0
+                val initialMorale = jsonResponse.jsonObject["initialMorale"]?.jsonPrimitive?.intOrNull ?: 0
                 val scenariosJson = jsonResponse.jsonObject["scenarios"]?.toString() ?: "[]"
 
                 println("Story Line Title: $storyLineTitle")
                 println("Scenarios: $scenariosJson")
 
                 val scenarios = json.decodeFromString(ListSerializer(Scenario.serializer()), scenariosJson)
-                // If it parses, return the parsed Scenario list
+
                 val response = ScenariosWrapper(
                     wrapper = Pair(
                         first = StoryLine(
                             title = storyLineTitle,
                             description = storyLineDescription,
-                            timeCreated = null
+                            timeCreated = Clock.System.now().toEpochMilliseconds(),
+                            initialBudget = initialBudget,
+                            initialMorale = initialMorale
                         ),
                         second = scenarios
                     )
@@ -130,17 +146,26 @@ class LLMApi(
         }
     }
 
-    suspend fun sendChatMessage(message: String): ApiResponse<String> {
+    suspend fun sendUserChatMessage(message: String, history: List<ChatMessages>, gameContext: String? = null): ApiResponse<String> {
+        var conversationContent = history.map { chatMessage ->
+            Content(
+                role = if (ChatMessageSender.USER.name == chatMessage.sender) "user" else "model",
+                parts = listOf(Part(text = chatMessage.message))
+            )
+        }
+
+        conversationContent = conversationContent + listOf(
+            Content(
+                parts = listOf(Part(message)),
+                role = "user"
+            )
+        )
+
         val requestBody = GeminiRequest(
             systemInstruction = Parts(
-                parts = listOf(Part(SYSTEM_PROMPT))
+                parts = listOf(Part(getSophiaChatPrompt(gameContext)))
             ),
-            contents = listOf(
-                Content(
-                    parts = listOf(Part(message)),
-                    role = "user"
-                )
-            )
+            contents = conversationContent
         )
 
         try {
@@ -162,19 +187,24 @@ class LLMApi(
     }
 }
 
-private const val SYSTEM_PROMPT = """
-        You are Sophia, a 68-year-old Parisian grandmother working at a transit help desk.
+
+private fun getSophiaChatPrompt(gameContext: String?): String {
+    return """
+             You are Sophia, a 68-year-old Parisian grandmother working at a transit help desk.
         
-        Your Personality:
-        - You are impatient, sarcastic, and bluntly honest.
-        - You use French slang like "Bof", "Putain", "Merde", "Oulala".
-        - You vaguely despise tourists but grudgingly help them.
-        - You frequently mention that the user is wasting your time.
-        
-        Context:
-        - The user is a broke student in Paris.
-        - The currency is Euros (€).
-        - A fine is exactly €60.
-        
-        Goal: Answer the user's question, but make them feel slightly stupid for asking it. Keep it short (under 50 words).
-    """
+            Your Personality:
+            - You are impatient, sarcastic, and bluntly honest.
+            - You can use French slang like "Bof", "Putain", "Merde", "Oulala".
+            - You sometimes mention that the user is wasting your time.
+            
+            Current Game Status:
+            ${gameContext ?: "The user is currently in the main menu."}
+            
+            IMPORTANT OUTPUT RULES:
+            1. Speak DIRECTLY to the user.
+            2. Do NOT use asterisks (*) to describe actions, looks, or tone.
+            3. Just output the text of what you say.
+            
+            Goal: Answer the user's question, but make them feel slightly stupid for asking it. Keep it short (under 50 words).
+        """.trimIndent()
+}

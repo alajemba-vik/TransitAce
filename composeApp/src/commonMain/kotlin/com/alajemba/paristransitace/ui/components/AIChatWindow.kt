@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.alajemba.paristransitace.ui.model.ChatMessageAction
 import com.alajemba.paristransitace.ui.model.ChatUiModel
@@ -24,7 +25,9 @@ import paristransitace.composeapp.generated.resources.Res
 import paristransitace.composeapp.generated.resources.ai_name
 import paristransitace.composeapp.generated.resources.chat_window_provide_language_instruction
 import paristransitace.composeapp.generated.resources.chat_window_title
+import paristransitace.composeapp.generated.resources.log
 import paristransitace.composeapp.generated.resources.reply_ellipsis
+import paristransitace.composeapp.generated.resources.scenario
 import paristransitace.composeapp.generated.resources.you
 
 @Composable
@@ -33,12 +36,13 @@ fun AIChatWindow(
     onSend: (String) -> Unit,
     modifier: Modifier = Modifier,
     isNewMessageEnabled: Boolean = true,
-    onChatMessageAction: (ChatMessageAction) -> Unit,
+    onChatMessageAction: (ChatMessageAction, ChatUiModel) -> Unit,
+    bgColor: Color = VoidBlack,
 ) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(VoidBlack)
+            .background(bgColor)
             .padding(horizontal = Dimens.Space.medium)
             .border(Dimens.Border.thin, RetroAmber.copy(alpha = 0.3f))
             .padding(Dimens.Space.small)
@@ -104,7 +108,7 @@ private fun TitleBar() {
 @Composable
 private fun WindowContent(
     chatMessages: List<ChatUiModel>,
-    onChatMessageAction: (ChatMessageAction) -> Unit,
+    onChatMessageAction: (ChatMessageAction, ChatUiModel) -> Unit,
 ) {
 
     val lazyListState = rememberLazyListState()
@@ -127,7 +131,13 @@ private fun WindowContent(
             items(
                 chatMessages,
                 itemContent = { message ->
-                    MessageCard(message, onAction = onChatMessageAction)
+                    MessageCard(
+                        message,
+                        onAction = { action ->
+                            onChatMessageAction(action, message)
+                        },
+                        canDisplayActions = chatMessages.last().id == message.id
+                    )
                 }
             )
         }
@@ -138,6 +148,7 @@ private fun WindowContent(
 private fun MessageCard(
     message: ChatUiModel,
     onAction: (ChatMessageAction) -> Unit,
+    canDisplayActions: Boolean = true
 ) {
     Box(
         modifier = Modifier
@@ -169,22 +180,30 @@ private fun MessageCard(
                 color = RetroAmber,
             )
 
-            if (message.actions.isNotEmpty()) {
+            if (message.actions.isNotEmpty() && canDisplayActions) {
                 Spacer(modifier = Modifier.height(Dimens.Space.medium))
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(Dimens.Space.medium)) {
-                    message.actions.forEach { action ->
-                        ActionButton(
-                            onClick = { onAction(action) },
-                            colors = ButtonDefaults.buttonColors(containerColor = action.color),
-                            label = stringResource(action.label)
-                        ) {
-                            Icon(action.icon, null)
+                if (message.selectedAction != null) {
+                    Text(
+                        text = stringResource(message.selectedAction.label),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.Gray.copy(alpha = 0.5f)
+                    )
+                } else {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(Dimens.Space.medium)) {
+                        message.actions.forEach { action ->
+                            ActionButton(
+                                onClick = { onAction(action) },
+                                colors = ButtonDefaults.buttonColors(containerColor = action.color),
+                                label = stringResource(action.label)
+                            ) {
+                                Icon(action.icon, null)
+                            }
                         }
                     }
                 }
+
+
             }
-
-
         }
     }
 }

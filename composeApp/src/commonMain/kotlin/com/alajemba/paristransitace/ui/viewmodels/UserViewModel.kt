@@ -84,7 +84,10 @@ internal class UserViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
                 }
 
                 if (simulationType != GameSetup.SimulationType.UNDEFINED) {
-                    _gameSetupState.value = gameSetupState.value.copy(simulationType = simulationType)
+                    _gameSetupState.value = gameSetupState.value.copy(
+                        simulationType = simulationType,
+                        scenariosGenerationStatus = ScenarioGenerationStatus.PROCESSING
+                    )
                 }
             }
 
@@ -127,16 +130,6 @@ internal class UserViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
 
         return _gameSetupState.value
 
-    }
-
-    fun sendChatMessage(message: String) {
-        viewModelScope.launch {
-            val response = transitAceSDK.sendChatMessage(message, ChatMessageSender.USER.name)
-
-            if (response.hasError) {
-                // TODO()
-            }
-        }
     }
 
     fun updateStats(budgetImpact: Double, moraleImpact: Int, increaseLegalInfractionsBy: Int) {

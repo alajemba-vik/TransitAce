@@ -53,4 +53,6 @@
     <string name="stay">STAY</string>
     <string name="leave">LEAVE</string>
 
+    <string name="secure_uplink_established">// SECURE UPLINK ESTABLISHED</string>
+
 </resources>

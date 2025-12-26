@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ChatMessageEntity(
+    val id: Long,
     @SerialName("sender")
     val sender: String,
     @SerialName("message")

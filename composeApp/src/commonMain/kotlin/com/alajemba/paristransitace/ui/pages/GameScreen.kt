@@ -8,16 +8,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.alajemba.paristransitace.ui.components.AIChatWindow
 import com.alajemba.paristransitace.ui.components.AnimatedGameOverOverlay
 import com.alajemba.paristransitace.ui.components.AnimatedScenarioImage
 import com.alajemba.paristransitace.ui.components.HomeButton
@@ -27,6 +26,7 @@ import com.alajemba.paristransitace.ui.components.dialogs.AISpeechBubble
 import com.alajemba.paristransitace.ui.model.Scenario
 import com.alajemba.paristransitace.ui.model.ScenarioOption
 import com.alajemba.paristransitace.ui.theme.*
+import com.alajemba.paristransitace.ui.viewmodels.ChatViewModel
 import com.alajemba.paristransitace.ui.viewmodels.GameViewModel
 import com.alajemba.paristransitace.ui.viewmodels.UserViewModel
 import kotlinx.coroutines.delay
@@ -34,10 +34,12 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import org.jetbrains.compose.resources.stringResource
 import paristransitace.composeapp.generated.resources.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun GameScreen(
     gameViewModel: GameViewModel,
     userViewModel: UserViewModel,
+    chatViewModel: ChatViewModel,
     onNavigateHome: () -> Unit,
 ) {
 
@@ -53,107 +55,155 @@ internal fun GameScreen(
         onNavigateHome()
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(VoidBlack)
+    var showComms by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    Scaffold(
+        topBar = {
+            ScreenHeader(
+                scenarioTitle = "${stringResource(Res.string.scenario).uppercase()} ${currentScenarioState.value?.id}",
+                progress = gameViewModel.scenarioProgress.value,
+                progressText = gameViewModel.scenarioProgressText.collectAsState("").value,
+                onHomeClick = {
+                    if (gameViewModel.scenarioProgress.value >= 1f) {
+                        goHome()
+                    } else {
+                        showOnHomeClickDialog = true
+                    }
+                },
+            )
+        },
+        modifier = Modifier.fillMaxSize()
             .statusBarsPadding()
             .safeDrawingPadding()
-            .padding(top = Dimens.Space.medium)
-    ) {
-        ScreenHeader(
-            scenarioTitle =  "${stringResource(Res.string.scenario).uppercase()} ${currentScenarioState.value?.id}",
-            progress = gameViewModel.scenarioProgress.value,
-            progressText =gameViewModel.scenarioProgressText.collectAsState("").value,
-            onHomeClick = {
-                if (gameViewModel.scenarioProgress.value >= 1f) {
-                     goHome()
-                } else {
-                    showOnHomeClickDialog = true
-                }
-            }
-        )
-
+    ) { padding ->
         Column(
             modifier = Modifier
-                .padding(horizontal = Dimens.Space.medium)
+                .fillMaxSize()
+                .background(VoidBlack)
+                .padding(padding)
+                .padding(top = Dimens.Space.medium)
         ) {
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = Dimens.Space.medium)
+            ) {
 
-            StatsBar(
-                userViewModel.userStatsState.value,
-                onMapsClicked = {
+                StatsBar(
+                    userViewModel.userStatsState.value,
+                    onCommsClicked = {
+                        showComms = true
+                    }
+                )
 
-                },
-                onCommsClicked = {
+                var isGameOver by remember { mutableStateOf(false) }
 
-                }
-            )
-
-            var isGameOver by remember { mutableStateOf(false) }
-
-            when {
-                !isGameOver -> {
-                    ScreenContent(
-                        currentScenarioState.value,
-                        onOptionSelected = { option ->
-                            userViewModel.updateStats(
-                                budgetImpact = option.budgetImpact,
-                                moraleImpact = option.moraleImpact,
-                                increaseLegalInfractionsBy = option.increaseLegalInfractionsBy
-                            )
-                        },
-                        loadNextScenario = {
-                            if (!gameViewModel.nextScenario()) {
-                                isGameOver = true
-                                gameViewModel.calculateFinalGrade(
-                                    budgetRemaining = userViewModel.userStatsState.value.budget,
-                                    moraleRemaining = userViewModel.userStatsState.value.morale,
-                                    legalInfractionsCount = userViewModel.userStatsState.value.legalInfractionsCount
+                when {
+                    !isGameOver -> {
+                        ScreenContent(
+                            currentScenarioState.value,
+                            onOptionSelected = { option ->
+                                userViewModel.updateStats(
+                                    budgetImpact = option.budgetImpact,
+                                    moraleImpact = option.moraleImpact,
+                                    increaseLegalInfractionsBy = option.increaseLegalInfractionsBy
                                 )
-                            }
-                        }
-                    )
-                }
-
-                else -> {
-                    with(userViewModel.userStatsState) {
-
-                        AnimatedGameOverOverlay(
-                            moneyRemaining = value.budget,
-                            moraleRemaining = value.morale,
-                            legalInfractionsCount = value.legalInfractionsCount,
-                            grade = gameViewModel.gameReport.value.grade,
-                            reason = gameViewModel.gameReport.value.summary,
-                            onRestart = {
-                                isGameOver = false
-                                userViewModel.resetUserStats()
-                                gameViewModel.startGame()
+                            },
+                            loadNextScenario = {
+                                if (!gameViewModel.nextScenario()) {
+                                    isGameOver = true
+                                    gameViewModel.calculateFinalGrade(
+                                        budgetRemaining = userViewModel.userStatsState.value.budget,
+                                        moraleRemaining = userViewModel.userStatsState.value.morale,
+                                        legalInfractionsCount = userViewModel.userStatsState.value.legalInfractionsCount
+                                    )
+                                }
                             }
                         )
+                    }
+
+                    else -> {
+                        with(userViewModel.userStatsState) {
+
+                            AnimatedGameOverOverlay(
+                                moneyRemaining = value.budget,
+                                moraleRemaining = value.morale,
+                                legalInfractionsCount = value.legalInfractionsCount,
+                                grade = gameViewModel.gameReport.value.grade,
+                                reason = gameViewModel.gameReport.value.summary,
+                                onRestart = {
+                                    isGameOver = false
+                                    userViewModel.resetUserStats()
+                                    gameViewModel.startGame()
+                                }
+                            )
+                        }
                     }
                 }
             }
         }
-    }
 
-    if (showOnHomeClickDialog) {
-        Dialog(onDismissRequest = { showOnHomeClickDialog = false }) {
-            AISpeechBubble(
-                text = stringResource(Res.string.game_screen_on_home_click_dialog_text),
-                onConfirm = {
-                    goHome()
-                    showOnHomeClickDialog = false
-                },
-                onDismiss = { showOnHomeClickDialog = false },
-                titleLabel = stringResource(Res.string.ai_says),
-                confirmLabel = stringResource(Res.string.stay),
-                dismissLabel = stringResource(Res.string.leave)
-            )
+        if (showComms) {
+            val bgColor = Color(0xFF1D2021)
+            ModalBottomSheet(
+                onDismissRequest = { showComms = false },
+                sheetState = sheetState,
+                containerColor = bgColor,
+                contentColor = Color(0xFFEBDBB2),
+                tonalElevation = 0.dp,
+                shape = RectangleShape,
+                dragHandle = {
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 8.dp)
+                            .width(40.dp)
+                            .height(4.dp)
+                            .background(Color(0xFFD79921), RoundedCornerShape(2.dp))
+                    )
+                }
+            ) {
+                Column(modifier = Modifier.fillMaxHeight(0.7f)) {
+
+                    Text(
+                        text = stringResource(Res.string.secure_uplink_established),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.Green,
+                        modifier = Modifier.padding(start = 16.dp, top = 8.dp)
+                    )
+
+                    AIChatWindow(
+                        chatMessages = chatViewModel.chatMessages.collectAsState().value,
+                        onSend = { msg -> chatViewModel.sendInGameMessage(
+                            msg,
+                            userViewModel.gameSetupState.value,
+                            gameContext = gameViewModel.getGameContext()
+                        ) },
+                        isNewMessageEnabled = true,
+                        modifier = Modifier.padding(bottom = 16.dp),
+                        onChatMessageAction = {_,_ -> },
+                        bgColor = bgColor
+                    )
+                }
+            }
         }
+
+        if (showOnHomeClickDialog) {
+            Dialog(onDismissRequest = { showOnHomeClickDialog = false }) {
+                AISpeechBubble(
+                    text = stringResource(Res.string.game_screen_on_home_click_dialog_text),
+                    onConfirm = {
+                        goHome()
+                        showOnHomeClickDialog = false
+                    },
+                    onDismiss = { showOnHomeClickDialog = false },
+                    titleLabel = stringResource(Res.string.ai_says),
+                    confirmLabel = stringResource(Res.string.stay),
+                    dismissLabel = stringResource(Res.string.leave)
+                )
+            }
+        }
+
     }
-
-
-
 
 }
 

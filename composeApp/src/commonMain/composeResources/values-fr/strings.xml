@@ -54,4 +54,8 @@
     <string name="ai_says">⚠️ SOPHIE DIT :</string>
     <string name="stay">RESTER</string>
     <string name="leave">PARTIR</string>
+
+    <!-- Added secure uplink string (FR) -->
+    <string name="secure_uplink_established">// LIAISON SÉCURISÉE ÉTABLIE</string>
+
 </resources>
