@@ -23,7 +23,7 @@
     <string name="landing_build">BUILD : 2025.REFORM.V1</string>
     <string name="landing_id">ID : FR-75-IDF-001</string>
     <string name="landing_heading">PARIS TRANSIT ACE : LA COURSE IMAGINE R</string>
-    <string name="landing_year_changed">Nous sommes en 2025. Tout a changé :</string>
+    <string name="landing_year_changed">Tout a changé :</string>
     <string name="landing_bullet1">Les tickets papier sont morts</string>
     <string name="landing_bullet1_highlight">morts</string>
     <string name="landing_bullet2">Les zones tarifaires sont abolies</string>
@@ -58,4 +58,8 @@
     <!-- Added secure uplink string (FR) -->
     <string name="secure_uplink_established">// LIAISON SÉCURISÉE ÉTABLIE</string>
 
+    <string name="show_all_storylines">Montre-moi toutes les intrigues</string>
+    <string name="load_storyline">Charge l'intrigue [name]</string>
+    <string name="restart_game">Redémarrer ce jeu</string>
+    <string name="help">Aide</string>
 </resources>

@@ -180,7 +180,8 @@ internal fun GameScreen(
                         isNewMessageEnabled = true,
                         modifier = Modifier.padding(bottom = 16.dp),
                         onChatMessageAction = {_,_ -> },
-                        bgColor = bgColor
+                        bgColor = bgColor,
+                        isSetupPhase = false
                     )
                 }
             }

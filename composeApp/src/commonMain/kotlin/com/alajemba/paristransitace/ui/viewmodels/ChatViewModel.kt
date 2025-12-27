@@ -172,7 +172,11 @@ internal class ChatViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
         attachChatMessage(chatMessage, ChatMessageSender.AI, actions)
     }
 
-    fun sendInGameMessage(message: String, gameSetup: GameSetup, gameContext: String? = null) {
+    fun sendInGameMessage(
+        message: String,
+        gameSetup: GameSetup,
+        gameContext: String? = null
+    ) {
         viewModelScope.launch {
             val result = transitAceSDK.sendUserChatMessage(message, ChatMessageSender.USER.name, !gameSetup.isEnglish, gameContext = gameContext)
             val isFrench = !gameSetup.isEnglish

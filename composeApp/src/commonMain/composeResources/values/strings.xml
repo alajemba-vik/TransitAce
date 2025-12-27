@@ -23,7 +23,7 @@
     <string name="landing_build">BUILD: 2025.SUBMIT.V1</string>
     <string name="landing_id">ID: FR-VIK-JE-TRANSIT-001-</string>
     <string name="landing_heading">PARIS TRANSIT ACE: THE IMAGINE R RACE</string>
-    <string name="landing_year_changed">The year is 2025. Everything has changed:</string>
+    <string name="landing_year_changed">A lot has changed:</string>
     <string name="landing_bullet1">Paper tickets are dead</string>
     <string name="landing_bullet1_highlight">dead</string>
     <string name="landing_bullet2">Fare zones are abolished</string>
@@ -54,5 +54,10 @@
     <string name="leave">LEAVE</string>
 
     <string name="secure_uplink_established">// SECURE UPLINK ESTABLISHED</string>
+
+    <string name="show_all_storylines">Show me all storylines</string>
+    <string name="load_storyline">Load [name] storyline</string>
+    <string name="restart_game">Restart this game</string>
+    <string name="help">Help</string>
 
 </resources>

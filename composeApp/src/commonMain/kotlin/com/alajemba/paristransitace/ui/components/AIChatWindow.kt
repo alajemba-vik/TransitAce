@@ -38,6 +38,7 @@ fun AIChatWindow(
     isNewMessageEnabled: Boolean = true,
     onChatMessageAction: (ChatMessageAction, ChatUiModel) -> Unit,
     bgColor: Color = VoidBlack,
+    isSetupPhase: Boolean = true
 ) {
     Column(
         modifier = modifier
@@ -77,7 +78,9 @@ fun AIChatWindow(
 
         Spacer(modifier = Modifier.height(Dimens.Space.small))
 
-        Footer()
+        Footer(
+            "Type \"help\" to see available actions | Tapez \"aide\" pour voir les actions"
+        )
     }
 }
 
@@ -209,10 +212,10 @@ private fun MessageCard(
 }
 
 @Composable
-fun Footer() {
+fun Footer(text: String = stringResource(Res.string.chat_window_provide_language_instruction)) {
     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         Text(
-            text = stringResource(Res.string.chat_window_provide_language_instruction).uppercase(),
+            text = text.uppercase(),
             style = MaterialTheme.typography.labelMedium,
             color = RetroAmber.copy(alpha = 0.7f)
         )
