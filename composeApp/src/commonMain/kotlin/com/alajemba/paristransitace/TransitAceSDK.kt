@@ -8,6 +8,7 @@ import com.alajemba.paristransitace.entity.ChatMessageEntity
 import com.alajemba.paristransitace.model.GameSetting
 import com.alajemba.paristransitace.network.LLMApi
 import com.alajemba.paristransitace.network.models.ApiResponse
+import com.alajemba.paristransitace.network.models.ChatResult
 import com.alajemba.paristransitace.ui.model.ChatMessageAction
 import com.alajemba.paristransitace.ui.model.ChatMessageSender
 import com.alajemba.paristransitace.ui.model.GameSetup.GameLanguage
@@ -90,25 +91,28 @@ internal class TransitAceSDK(
         sender: String,
         isFrench: Boolean,
         gameContext: String? = null
-    ): ApiResponse<*> {
+    ): ApiResponse<ChatResult> {
+        println("Sending user chat message: $message")
         insertChatMessage(message, sender)
 
         val history = dbQueries.selectAllChatMessages().executeAsList()
+        val storyLines = dbQueries.selectAllStories().executeAsList()
 
-        val response = llmApi.sendUserChatMessage(message, history, gameContext)
+        val response = llmApi.sendUserChatMessage(message, history, storyLines, gameContext)
+        val result = response.data
 
-        println(response.data)
-
-        val message = if (response.data.isNullOrBlank()) {
+        println("Received chat response: $result")
+        if (result is ChatResult.TextResponse){
+            insertChatMessage(result.content, ChatMessageSender.AI.name)
+        } else if (result == null) {
             val message = if (isFrench) {
                 "Une erreur est survenue. Sophia pourrait être en pause cigarette. (Erreur de connexion)"
             } else {
                 "There was an error. Sophia might be on a cigarette break. (Connection Error)"
             }
-            message
-        } else response.data
 
-        insertChatMessage(message, ChatMessageSender.AI.name)
+            insertChatMessage(message, ChatMessageSender.AI.name)
+        }
 
         return response
     }
@@ -132,10 +136,13 @@ internal class TransitAceSDK(
                 timeCreated = Clock.System.now().toEpochMilliseconds(),
                 description = storyLine.description,
                 initialBudget = storyLine.initialBudget,
-                initialMorale = storyLine.initialMorale.toLong()
+                initialMorale = storyLine.initialMorale.toLong(),
+                id = null
             )
 
-            dbQueries.deleteScenariosForStory(storyLine.title)
+            val lastInsertedStoryId = dbQueries.lastInsertedRowId().executeAsOne()
+
+            dbQueries.deleteScenariosForStory(lastInsertedStoryId)
 
             scenarios.forEach { scenario ->
                 val optionsJson = json.encodeToString(scenario.options)
@@ -149,14 +156,14 @@ internal class TransitAceSDK(
                     nextScenarioId = scenario.nextScenarioId,
                     currentIndexInGame = scenario.currentIndexInGame.toLong(),
                     scenarioTheme = scenario.scenarioTheme.name,
-                    parent_story_title = storyLine.title,
+                    parent_story_id = lastInsertedStoryId
                 )
             }
         }
     }
 
-    fun loadScenariosForStoryLine(storyTitle: String): List<Scenario> {
-        return dbQueries.selectAllScenariosForStory(storyTitle).executeAsList().map { entity ->
+    fun loadScenariosForStoryLine(storyID: Long): List<Scenario> {
+        return dbQueries.selectAllScenariosForStory(storyID).executeAsList().map { entity ->
             Scenario(
                 id = entity.id,
                 title = entity.title,
@@ -182,16 +189,17 @@ internal class TransitAceSDK(
                 description = entity.description ?: "",
                 timeCreated = entity.timeCreated,
                 initialBudget = entity.initialBudget ?: .0,
-                initialMorale = entity.initialMorale?.toInt() ?: 0
+                initialMorale = entity.initialMorale?.toInt() ?: 0,
+                id = entity.id
             )
         }
     }
 
 
-    fun deleteStory(storyTitle: String) {
+    fun deleteStory(storyID: Long) {
         database.transaction {
-            dbQueries.deleteScenariosForStory(storyTitle)
-            dbQueries.deleteStory(storyTitle)
+            dbQueries.deleteScenariosForStory(storyID)
+            dbQueries.deleteStory(storyID)
         }
     }
 

@@ -19,7 +19,8 @@ DELETE FROM Settings;
 
 
 CREATE TABLE StoryEntity (
-    title TEXT NOT NULL PRIMARY KEY,
+    id INTEGER NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
     timeCreated INTEGER DEFAULT CURRENT_TIMESTAMP,
     description TEXT,
     initialBudget REAL,
@@ -35,17 +36,17 @@ CREATE TABLE ScenarioEntity (
     nextScenarioId TEXT,
     currentIndexInGame INTEGER NOT NULL DEFAULT -1,
     scenarioTheme TEXT NOT NULL,
-    parent_story_title TEXT NOT NULL,
-    FOREIGN KEY(parent_story_title) REFERENCES StoryEntity(title) ON DELETE CASCADE
+    parent_story_id INTEGER NOT NULL,
+    FOREIGN KEY(parent_story_id) REFERENCES StoryEntity(id) ON DELETE CASCADE
 );
 
 insertStory:
-INSERT OR REPLACE INTO StoryEntity(title, timeCreated, description, initialBudget, initialMorale)
-VALUES (?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO StoryEntity(id, title, timeCreated, description, initialBudget, initialMorale)
+VALUES (?, ?, ?, ?, ?, ?);
 
 insertScenario:
 INSERT OR REPLACE INTO ScenarioEntity(
-    id, title, description, options_json, correctOptionId, nextScenarioId, currentIndexInGame, scenarioTheme, parent_story_title
+    id, title, description, options_json, correctOptionId, nextScenarioId, currentIndexInGame, scenarioTheme, parent_story_id
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 selectAllStories:
@@ -53,14 +54,13 @@ SELECT * FROM StoryEntity;
 
 selectAllScenariosForStory:
 SELECT * FROM ScenarioEntity
-WHERE parent_story_title = ?;
+WHERE parent_story_id = ?;
 
 deleteStory:
-DELETE FROM StoryEntity WHERE title = ?;
+DELETE FROM StoryEntity WHERE id = ?;
 
 deleteScenariosForStory:
-DELETE FROM ScenarioEntity WHERE parent_story_title = ?;
-
+DELETE FROM ScenarioEntity WHERE parent_story_id = ?;
 
 
 CREATE TABLE ChatMessages (
@@ -85,5 +85,6 @@ DELETE FROM ChatMessages;
 selectAllChatMessages:
 SELECT * FROM ChatMessages;
 
-lastInsertedChatMessageId:
+
+lastInsertedRowId:
 SELECT last_insert_rowid();

@@ -12,7 +12,6 @@ import com.alajemba.paristransitace.ui.model.Scenario
 import com.alajemba.paristransitace.ui.model.ScenarioOption
 import com.alajemba.paristransitace.ui.model.ScenarioTheme
 import com.alajemba.paristransitace.ui.model.StoryLine
-import io.ktor.client.plugins.logging.EMPTY
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
@@ -50,9 +49,11 @@ internal class GameViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
     private var lastUsedTransitRulesJson : String? = null
 
     fun getGameContext(): String {
+        if (_currentStoryLine.title.isBlank()) return ""
+
         return """
             Context title: ${_currentStoryLine.title} 
-            |Context description${_currentStoryLine.description}
+            Context description: ${_currentStoryLine.description}
             """.trimIndent()
     }
     fun clearState() {
@@ -174,6 +175,9 @@ internal class GameViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
 
     fun saveGeneratedCustomScenarios() {
 
+    }
+
+    fun loadStory(sentMessage: String) {
     }
 
 

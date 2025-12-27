@@ -3,6 +3,8 @@ package com.alajemba.paristransitace.ui.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alajemba.paristransitace.TransitAceSDK
+import com.alajemba.paristransitace.network.models.ChatResult
+import com.alajemba.paristransitace.network.models.FunctionDeclaration
 import com.alajemba.paristransitace.ui.model.ChatMessageAction
 import com.alajemba.paristransitace.ui.model.ChatMessageSender
 import com.alajemba.paristransitace.ui.model.ChatUiModel
@@ -61,6 +63,10 @@ internal class ChatViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
 
     fun attachUserNewMessage(input: String) {
         attachChatMessage(input, ChatMessageSender.USER)
+    }
+
+    fun attachSystemMessage(input: String) {
+        attachChatMessage(input, ChatMessageSender.AI)
     }
 
     private fun attachChatMessage(
@@ -168,7 +174,77 @@ internal class ChatViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
 
     fun sendInGameMessage(message: String, gameSetup: GameSetup, gameContext: String? = null) {
         viewModelScope.launch {
-            transitAceSDK.sendUserChatMessage(message, ChatMessageSender.USER.name, !gameSetup.isEnglish, gameContext = gameContext)
+            val result = transitAceSDK.sendUserChatMessage(message, ChatMessageSender.USER.name, !gameSetup.isEnglish, gameContext = gameContext)
+            val isFrench = !gameSetup.isEnglish
+
+            when(result.data){
+                is ChatResult.ExecuteCommand -> {
+                    val command = result.data.command
+                    val aiResponseMsg = if (!isFrench) "> EXECUTING PROTOCOL:" else
+                        "> EXÉCUTION DU PROTOCOLE :"
+
+                    // Show a "System Log" so the user sees something happened
+                    transitAceSDK.insertChatMessage(
+                        aiResponseMsg + command.uppercase(),
+                        ChatMessageSender.AI.name
+                    )
+
+                    // Do the actual work
+                    when (command) {
+                        FunctionDeclaration.DECL_GET_ALL_STORYLINES -> {
+                            val stories = transitAceSDK.getAllStories().joinToString("\n") { "- ${it.title}" }
+                            var responseMessage = ""
+
+                            responseMessage = if (stories.isEmpty()) {
+                                if (!isFrench) {
+                                    "No stories available at the moment."
+                                } else {
+                                    "Aucune histoire disponible pour le moment."
+                                }
+                            } else {
+                                if (!isFrench) {
+                                    "AVAILABLE FILES:\n$stories"
+                                } else {
+                                    "FICHIERS DISPONIBLES:\n$stories"
+                                }
+                            }
+
+                            attachChatMessage(
+                                responseMessage,
+                                ChatMessageSender.AI
+                            )
+                        }
+
+                        FunctionDeclaration.DECL_SHOW_HELP -> {
+                            attachChatMessage(
+                                (if (!isFrench) {
+                                    """- "Show me all storylines"
+                                    |- "Load [name] scenario"
+                                    |- "Reset this level"
+                                    |- "Help"
+                                    """.trimMargin()
+                                } else {
+                                    """- "Montre-moi toutes les intrigues"
+                                    |- "Charge le scénario [nom]"
+                                    |- "Réinitialise ce niveau"
+                                    |- "Aide"
+                                    """.trimMargin()
+                                }).trimIndent(),
+                                ChatMessageSender.AI
+                            )
+                        }
+
+                        else -> {
+                            _uiDataState.value = UIDataState.Success.ChatResponse(
+                                command = result.data,
+                                sentMessage = message
+                            )
+                        }
+                    }
+                }
+
+                else -> {}
+            }
         }
     }
 

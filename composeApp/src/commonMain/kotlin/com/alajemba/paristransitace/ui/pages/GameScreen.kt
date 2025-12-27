@@ -47,16 +47,15 @@ internal fun GameScreen(
         gameViewModel.startGame()
     }
 
-
     val currentScenarioState = gameViewModel.currentScenario.collectAsState()
     var showOnHomeClickDialog by remember { mutableStateOf(false) }
+
+    var showComms by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     fun goHome(){
         onNavigateHome()
     }
-
-    var showComms by remember { mutableStateOf(false) }
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Scaffold(
         topBar = {

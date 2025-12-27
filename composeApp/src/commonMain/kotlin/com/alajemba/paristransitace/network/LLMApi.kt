@@ -6,6 +6,7 @@ import ai.koog.prompt.executor.clients.google.GoogleModels
 import ai.koog.prompt.executor.llms.all.simpleGoogleAIExecutor
 import com.alajemba.paristransitace.BuildConfig
 import com.alajemba.paristransitace.db.ChatMessages
+import com.alajemba.paristransitace.db.StoryEntity
 import com.alajemba.paristransitace.network.models.*
 import com.alajemba.paristransitace.ui.model.ChatMessageSender
 import com.alajemba.paristransitace.ui.model.GameSetup.GameLanguage
@@ -17,9 +18,13 @@ import com.alajemba.paristransitace.ui.viewmodels.buildDefaultScenarios
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.*
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
@@ -127,7 +132,9 @@ class LLMApi(
                             description = storyLineDescription,
                             timeCreated = Clock.System.now().toEpochMilliseconds(),
                             initialBudget = initialBudget,
-                            initialMorale = initialMorale
+                            initialMorale = initialMorale,
+                            id = null
+
                         ),
                         second = scenarios
                     )
@@ -146,7 +153,12 @@ class LLMApi(
         }
     }
 
-    suspend fun sendUserChatMessage(message: String, history: List<ChatMessages>, gameContext: String? = null): ApiResponse<String> {
+    suspend fun sendUserChatMessage(
+        message: String,
+        history: List<ChatMessages>,
+        storyLines: List<StoryEntity>,
+        gameContext: String? = null
+    ): ApiResponse<ChatResult> {
         var conversationContent = history.map { chatMessage ->
             Content(
                 role = if (ChatMessageSender.USER.name == chatMessage.sender) "user" else "model",
@@ -163,9 +175,10 @@ class LLMApi(
 
         val requestBody = GeminiRequest(
             systemInstruction = Parts(
-                parts = listOf(Part(getSophiaChatPrompt(gameContext)))
+                parts = listOf(Part(getSophiaChatPrompt(gameContext, storyLines)))
             ),
-            contents = conversationContent
+            contents = conversationContent,
+            tools = listOf(gameTools)
         )
 
         try {
@@ -176,9 +189,25 @@ class LLMApi(
                 setBody(requestBody)
             }.body<GeminiResponse>()
 
-            val reply = response.candidates?.first()?.content?.parts?.first()?.text ?: ""
+            println("LLM Full Request: ${requestBody}")
+            println("-------------------\n\n\n\n")
+            println("LLM Full Response: ${response}")
 
-            return ApiResponse(data = reply)
+            val candidate = response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()
+
+            println("LLM Response Candidate: ${response.candidates?.firstOrNull()}")
+
+            if (candidate?.functionCall != null) {
+                val func = candidate.functionCall
+                val argument = func.args[FunctionParameters.PARAM_SCENARIO_ID]
+                return ApiResponse(ChatResult.ExecuteCommand(command = func.name, arg = argument))
+            }
+
+            if (!candidate?.text.isNullOrBlank()) {
+                return ApiResponse(ChatResult.TextResponse(candidate.text))
+            }
+
+            throw Exception()
 
         } catch (e: Exception) {
             return ApiResponse(errorMessage = e.message ?: "Connection error ${e.message}")
@@ -187,8 +216,67 @@ class LLMApi(
     }
 }
 
+// In LLMApi.kt
 
-private fun getSophiaChatPrompt(gameContext: String?): String {
+private val gameTools = Tool(
+    functionDeclarations = listOf(
+        // Action 1: See All Storylines
+        FunctionDeclaration(
+            name = FunctionDeclaration.DECL_GET_ALL_STORYLINES,
+            description = "Retrieves and displays a list of all available game storylines or scenarios.",
+            parameters = FunctionParameters(
+                type = "object",
+                properties = emptyMap(),
+                required = emptyList()
+            )
+        ),
+        // Action 2: Load New Storyline
+        FunctionDeclaration(
+            name = FunctionDeclaration.DECL_LOAD_STORYLINE,
+            description = "Clears the current session and loads a specific storyline. Requires a keyword or ID.",
+            parameters = FunctionParameters(
+                type = "object",
+                properties = mapOf(
+                    FunctionParameters.PARAM_SCENARIO_ID to JsonObject(
+                        mapOf(
+                            "type" to JsonPrimitive("integer"),        // Matches doc: "type (string)"
+                            "description" to JsonPrimitive("The exact ID of the scenario to load.") // Matches doc: "description (string)"
+                        )
+                    ),
+                ),
+                required = listOf(FunctionParameters.PARAM_SCENARIO_ID)
+            )
+        ),
+        // Action 3: Reset Game
+        FunctionDeclaration(
+            name = FunctionDeclaration.DECL_RESTART_GAME,
+            description = "Resets the current storyline progress back to the beginning (0% completion).",
+            parameters = FunctionParameters(
+                type = "object",
+                properties = emptyMap(),
+                required = emptyList()
+            )
+        ),
+        // Action 4: Help
+        FunctionDeclaration(
+            name = FunctionDeclaration.DECL_SHOW_HELP,
+            description = "Displays a help menu listing all available commands and actions Sophia can perform.",
+            parameters = FunctionParameters(
+                type = "object",
+                properties = emptyMap(),
+                required = emptyList()
+            )
+        )
+    )
+)
+
+private fun getSophiaChatPrompt(gameContext: String?, availableStoryLines: List<StoryEntity>): String {
+    val filesList = if (availableStoryLines.isEmpty()) {
+        "No scenarios available."
+    } else {
+        availableStoryLines.joinToString("\n") { "- [ID: ${it.id}] ${it.title} (${it.description?.take(50)}...)" }
+    }
+
     return """
              You are Sophia, a 68-year-old Parisian grandmother working at a transit help desk.
         
@@ -200,6 +288,9 @@ private fun getSophiaChatPrompt(gameContext: String?): String {
             Current Game Status:
             ${gameContext ?: "The user is currently in the main menu."}
             
+            AVAILABLE SCENARIOS (DATABASE):
+            $filesList
+          
             IMPORTANT OUTPUT RULES:
             1. Speak DIRECTLY to the user.
             2. Do NOT use asterisks (*) to describe actions, looks, or tone.

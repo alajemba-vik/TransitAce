@@ -5,12 +5,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.alajemba.paristransitace.network.models.FunctionDeclaration
+import com.alajemba.paristransitace.ui.model.UIDataState
 import com.alajemba.paristransitace.ui.pages.GameScreen
 import com.alajemba.paristransitace.ui.pages.HomeScreen
 import com.alajemba.paristransitace.ui.pages.LandingScreen
 import com.alajemba.paristransitace.ui.viewmodels.ChatViewModel
 import com.alajemba.paristransitace.ui.viewmodels.GameViewModel
 import com.alajemba.paristransitace.ui.viewmodels.UserViewModel
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -21,6 +24,34 @@ fun AppNavHost() {
     val userViewModel = koinViewModel<UserViewModel>()
     val chatViewModel = koinViewModel<ChatViewModel>()
     val gameViewModel = koinViewModel<GameViewModel>()
+
+    LaunchedEffect(Unit) {
+        launch {
+            gameViewModel.gameDataState.collect { dataState ->
+                when(dataState){
+                    is UIDataState.Success.ChatResponse -> {
+                        val isEnglish = userViewModel.gameSetupState.value.isEnglish
+
+                        if (dataState.command.command == FunctionDeclaration.DECL_LOAD_STORYLINE) {
+                            gameViewModel.loadStory(dataState.sentMessage)
+
+                            chatViewModel.attachSystemMessage(
+                                if (isEnglish) "Scenario loaded." else "Scénario chargé."
+                            )
+                        } else if (dataState.command.command == FunctionDeclaration.DECL_RESTART_GAME){
+                            gameViewModel.startGame()
+                            chatViewModel.attachSystemMessage(
+                                if (isEnglish) "Simulation reset." else "Simulation réinitialisée."
+                            )
+                        }
+                    }
+                    else -> {
+
+                    }
+                }
+            }
+        }
+    }
 
     NavHost(
         navController = navController,

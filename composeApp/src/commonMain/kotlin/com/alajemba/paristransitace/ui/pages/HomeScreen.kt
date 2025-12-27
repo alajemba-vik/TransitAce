@@ -29,7 +29,7 @@ internal fun HomeScreen(
     gameViewModel: GameViewModel,
     onStartGame: () -> Unit,
     userViewModel: UserViewModel,
-    goBack: (() -> Unit)?
+    goBack: (() -> Unit)?,
 ) {
 
     LaunchedEffect(Unit) {

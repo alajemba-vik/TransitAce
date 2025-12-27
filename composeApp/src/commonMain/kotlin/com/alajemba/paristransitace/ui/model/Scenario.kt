@@ -4,6 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class StoryLine(
+    val id: Long?,
     val title: String,
     val description: String,
     val timeCreated: Long?,
@@ -15,8 +16,9 @@ data class StoryLine(
             title = "",
             description = "",
             timeCreated = null,
-            initialBudget = 0,
-            initialMorale = 0
+            initialBudget = .0,
+            initialMorale = 0,
+            id = null
         )
     }
 }
