@@ -22,7 +22,7 @@
     <string name="landing_official">SYSTÈME OFFICIEL</string>
     <string name="landing_build">BUILD: 2026.SUBMIT.V1</string>
     <string name="landing_id">ID: FR-VIK-JE-TRANSIT-001-</string>
-    <string name="landing_heading">PARIS TRANSIT ACE: THE IMAGINE R RACE</string>
+    <string name="landing_heading">PARIS TRANSIT ACE</string>
     <string name="landing_year_changed">A lot has changed:</string>
     <string name="landing_bullet1">Paper tickets are dead</string>
     <string name="landing_bullet1_highlight">dead</string>
@@ -30,7 +30,7 @@
     <string name="landing_bullet2_highlight">abolished</string>
     <string name="landing_bullet3">Fines are higher</string>
     <string name="landing_bullet3_highlight">higher</string>
-    <string name="landing_instructions">Solve dynamic scenarios. Learn the transit rules. \nMaster the bureaucracy.</string>
+    <string name="landing_instructions">Solve dynamic scenarios. Learn the transit rules. \nMaster the system.</string>
     <string name="landing_guide">Your guide: Sophia, a 68-year-old Parisian grandmother.</string>
     <string name="landing_guide_desc">She's sarcastic, blunt, and your only hope.</string>
     <string name="landing_click_to_begin">[CLICK TO BEGIN]</string>
