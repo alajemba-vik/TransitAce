@@ -17,13 +17,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.alajemba.paristransitace.ui.model.UserStats
+import com.alajemba.paristransitace.domain.model.UserStats
 import com.alajemba.paristransitace.ui.theme.Dimens
 import com.alajemba.paristransitace.ui.theme.RetroAmber
+import com.alajemba.paristransitace.utils.toEuroString
 import org.jetbrains.compose.resources.stringResource
 import paristransitace.composeapp.generated.resources.Res
 import paristransitace.composeapp.generated.resources.comms
-import paristransitace.composeapp.generated.resources.map
 
 @Composable
 fun StatsBar(
@@ -43,7 +43,7 @@ fun StatsBar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                if (showUnknownState) "-" else userStats.budget.toString(),
+                if (showUnknownState) "-" else userStats.budget.toEuroString(),
                 color = RetroAmber,
                 style = MaterialTheme.typography.labelMedium
             )

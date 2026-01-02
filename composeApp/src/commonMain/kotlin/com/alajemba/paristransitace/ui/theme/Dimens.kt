@@ -22,6 +22,5 @@ object Dimens{
         val thick = 2.dp
     }
 
-    // Consistent Icon sizes if you need them later
     val iconSize = 24.dp
 }

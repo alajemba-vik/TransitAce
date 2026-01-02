@@ -2,19 +2,20 @@ package com.alajemba.paristransitace.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.text.intl.Locale
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.alajemba.paristransitace.network.models.FunctionDeclaration
-import com.alajemba.paristransitace.ui.model.UIDataState
-import com.alajemba.paristransitace.ui.pages.GameScreen
-import com.alajemba.paristransitace.ui.pages.HomeScreen
-import com.alajemba.paristransitace.ui.pages.LandingScreen
+import com.alajemba.paristransitace.domain.model.GameLanguage
+import com.alajemba.paristransitace.ui.game.GameScreen
+import com.alajemba.paristransitace.ui.home.HomeScreen
+import com.alajemba.paristransitace.ui.landing.LandingScreen
+import com.alajemba.paristransitace.ui.viewmodels.ChatEvent
 import com.alajemba.paristransitace.ui.viewmodels.ChatViewModel
 import com.alajemba.paristransitace.ui.viewmodels.GameViewModel
 import com.alajemba.paristransitace.ui.viewmodels.UserViewModel
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
 import org.koin.compose.viewmodel.koinViewModel
 
 
@@ -25,106 +26,112 @@ fun AppNavHost() {
     val chatViewModel = koinViewModel<ChatViewModel>()
     val gameViewModel = koinViewModel<GameViewModel>()
 
+
+
+    fun clearAppState() {
+        userViewModel.clearAllInfo()
+        gameViewModel.clearUIState()
+        chatViewModel.clearUIState()
+    }
+
     LaunchedEffect(Unit) {
+
         launch {
-            gameViewModel.gameDataState.collect { dataState ->
-                when(dataState){
-                    is UIDataState.Success.ChatResponse -> {
-                        val isEnglish = userViewModel.gameSetupState.value.isEnglish
-
-                        if (dataState.command.command == FunctionDeclaration.DECL_LOAD_STORYLINE) {
-                            gameViewModel.loadStory(dataState.sentMessage)
-
-                            chatViewModel.attachSystemMessage(
-                                if (isEnglish) "Scenario loaded." else "Scénario chargé."
-                            )
-                        } else if (dataState.command.command == FunctionDeclaration.DECL_RESTART_GAME){
-                            gameViewModel.startGame()
-                            chatViewModel.attachSystemMessage(
-                                if (isEnglish) "Simulation reset." else "Simulation réinitialisée."
-                            )
-                        }
+            chatViewModel.events.collect { event ->
+                when(event){
+                    is ChatEvent.LoadStory -> {
+                        gameViewModel.loadStory(event.storyId)
+                        chatViewModel.attachSystemMessage(
+                            if (!event.isFrench) "Scenario loaded." else "Scénario chargé."
+                        )
                     }
-                    else -> {
-
+                    is ChatEvent.RestartGame -> {
+                        gameViewModel.startGame()
+                        chatViewModel.attachSystemMessage(
+                            if (!event.isFrench) "Simulation reset." else "Simulation réinitialisée."
+                        )
                     }
                 }
             }
         }
     }
 
-    NavHost(
-        navController = navController,
-        startDestination = LandingRoute,
-    ) {
-        composable<LandingRoute> {
-            LandingScreen(
-                onStartGame = {
-                    navController.navigate(
-                        if (userViewModel.gameSetupState.value.isSetupComplete) GameRoute else HomeRoute
-                    ) {
-                        popUpTo(LandingRoute) {
-                            inclusive = true
+
+    when(val hasSeenLanding = userViewModel.hasSeenLandingScreen.collectAsStateWithLifecycle().value) {
+        null -> {
+            // Still loading
+        }
+        else -> {
+            NavHost(
+                navController = navController,
+                startDestination = if (hasSeenLanding) HomeRoute else LandingRoute,
+            ) {
+                composable<LandingRoute> {
+                    LandingScreen(
+                        onStartGame = {
+                            navController.navigate(
+                                if (userViewModel.gameSetupState.value.isSetupComplete) GameRoute else HomeRoute
+                            ) {
+                                popUpTo(LandingRoute) {
+                                    inclusive = true
+                                }
+                            }
+
                         }
+                    )
+
+                    LaunchedEffect(Unit) {
+                        launch {
+                            Locale.current.toLanguageTag().startsWith(GameLanguage.FRENCH.languageTag, ignoreCase = true).let { isFrench ->
+                                userViewModel.setDeviceLanguage(
+                                    if (isFrench) GameLanguage.FRENCH else GameLanguage.ENGLISH
+                                )
+                            }
+                        }
+
+                        userViewModel.setHasSeenLandingScreen()
                     }
-
                 }
-            )
 
-            LaunchedEffect(Unit){
-                gameViewModel.clearState()
-                userViewModel.clearAllInfo()
-                chatViewModel.clearAllChats()
+                composable<HomeRoute> {
+                    HomeScreen(
+                        chatViewModel = chatViewModel,
+                        userViewModel = userViewModel,
+                        gameViewModel = gameViewModel,
+                        goBack = {
+                            clearAppState()
+                            navController.navigate(LandingRoute) {
+                                popUpTo(HomeRoute) {
+                                    inclusive = true
+                                }
+                            }
+                        },
+                        onStartGame = {
+                            navController.navigate(GameRoute) {
+                                popUpTo(HomeRoute) {
+                                    inclusive = true
+                                }
+                            }
+                        }
+                    )
+                }
+
+                composable<GameRoute> {
+                    GameScreen(
+                        userViewModel = userViewModel,
+                        gameViewModel = gameViewModel,
+                        chatViewModel = chatViewModel,
+                        onNavigateHome = {
+                            clearAppState()
+                            navController.navigate(LandingRoute) {
+                                popUpTo(LandingRoute) {
+                                    inclusive = true
+                                }
+                            }
+                        }
+                    )
+                }
             }
-        }
-
-        composable<HomeRoute> {
-            HomeScreen(
-                chatViewModel = chatViewModel,
-                userViewModel = userViewModel,
-                gameViewModel = gameViewModel,
-                goBack = {
-                    navController.navigate(LandingRoute) {
-                        popUpTo(HomeRoute) {
-                            inclusive = true
-                        }
-                    }
-                },
-                onStartGame = {
-                    println("Navigating to Game Screen from Home Screen")
-                    navController.navigate(GameRoute) {
-                        popUpTo(HomeRoute) {
-                            inclusive = true
-                        }
-                    }
-                }
-            )
-        }
-
-        composable<GameRoute> {
-            GameScreen(
-                userViewModel = userViewModel,
-                gameViewModel = gameViewModel,
-                chatViewModel = chatViewModel,
-                onNavigateHome = {
-                    navController.navigate(LandingRoute) {
-                        popUpTo(LandingRoute) {
-                            inclusive = true
-                        }
-                    }
-                }
-            )
         }
     }
 }
-
-@Serializable
-object LandingRoute
-
-
-@Serializable
-object HomeRoute
-
-@Serializable
-object GameRoute
-

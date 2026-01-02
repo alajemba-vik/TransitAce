@@ -2,24 +2,38 @@ package com.alajemba.paristransitace.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.alajemba.paristransitace.TransitAceSDK
-import com.alajemba.paristransitace.network.models.ChatResult
-import com.alajemba.paristransitace.network.models.FunctionDeclaration
+import com.alajemba.paristransitace.domain.model.GameSetup
+import com.alajemba.paristransitace.domain.model.MessageSender
+import com.alajemba.paristransitace.domain.model.StoryLine
+import com.alajemba.paristransitace.domain.repository.ChatAIResponse
+import com.alajemba.paristransitace.domain.usecase.chat.InsertChatMessageUseCase
+import com.alajemba.paristransitace.domain.usecase.chat.SendChatMessageUseCase
+import com.alajemba.paristransitace.data.remote.model.FunctionDeclaration
+import com.alajemba.paristransitace.domain.repository.ChatRepository
+import com.alajemba.paristransitace.domain.repository.StoryRepository
+import com.alajemba.paristransitace.ui.mapper.toChatUiModel
 import com.alajemba.paristransitace.ui.model.ChatMessageAction
 import com.alajemba.paristransitace.ui.model.ChatMessageSender
 import com.alajemba.paristransitace.ui.model.ChatUiModel
 import com.alajemba.paristransitace.ui.model.UIDataState
-import com.alajemba.paristransitace.ui.model.GameSetup
-import com.alajemba.paristransitace.ui.model.StoryLine
-import com.alajemba.paristransitace.ui.model.UserStats
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
-internal class ChatViewModel(private val transitAceSDK: TransitAceSDK) : ViewModel() {
-    private val _userStatsState = MutableStateFlow(UserStats())
-    val userStatsState = _userStatsState.asStateFlow()
+sealed class ChatEvent {
+    data class LoadStory(val storyId: Long, val isFrench: Boolean) : ChatEvent()
+    data class RestartGame(val isFrench: Boolean) : ChatEvent()
+}
+
+internal class ChatViewModel(
+    private val insertChatMessage: InsertChatMessageUseCase,
+    private val sendChatMessage: SendChatMessageUseCase,
+    private val storyRepository: StoryRepository,
+    private val chatRepository: ChatRepository
+) : ViewModel() {
 
     private val _chatMessages = MutableStateFlow(emptyList<ChatUiModel>())
     val chatMessages = _chatMessages.asStateFlow()
@@ -27,149 +41,152 @@ internal class ChatViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
     private val _uiDataState: MutableStateFlow<UIDataState> = MutableStateFlow(UIDataState.Idle)
     val isLoading = _uiDataState.asStateFlow().map { it is UIDataState.Loading }
 
-    init {
-        viewModelScope.launch {
-            transitAceSDK.getAllChatMessages().collect { savedChatMessages ->
-                _chatMessages.value = listOf(
-                    ChatUiModel(
-                        id = -1L,
-                        sender = ChatMessageSender.AI,
-                        message = "English(E) / Français(F) ?",
-                        actions = emptyList()
-                    )
-                ) + savedChatMessages.map { chatMessageEntity ->
-                    ChatUiModel(
-                        id = chatMessageEntity.id,
-                        sender = when (chatMessageEntity.sender) {
-                            ChatMessageSender.AI.name -> ChatMessageSender.AI
-                            ChatMessageSender.USER.name -> ChatMessageSender.USER
-                            else -> ChatMessageSender.AI
-                        },
-                        message = chatMessageEntity.message,
-                        selectedAction = if (!chatMessageEntity.selectedActionName.isNullOrBlank()) {
-                            ChatMessageAction.fromString(chatMessageEntity.selectedActionName)
-                        } else {
-                            null
-                        },
-                        actions = chatMessageEntity.actions?.mapNotNull { ChatMessageAction.fromString(it) }
-                            ?: emptyList()
-                    )
-                }
+    private val _events = MutableSharedFlow<ChatEvent>()
+    val events: SharedFlow<ChatEvent> = _events
 
+    private val initialMessage = ChatUiModel(
+        id = -1L,
+        sender = ChatMessageSender.AI,
+        message = "English(E) / Français(F) ?",
+        actions = emptyList()
+    )
+
+    init {
+        observeChatMessages()
+    }
+
+    private fun observeChatMessages() {
+        viewModelScope.launch {
+            chatRepository.getAllMessages().collect { savedChatMessages ->
+                _chatMessages.value = listOf(initialMessage) + savedChatMessages.map { it.toChatUiModel() }
             }
         }
-
     }
 
     fun attachUserNewMessage(input: String) {
-        attachChatMessage(input, ChatMessageSender.USER)
+        attachChatMessage(input, MessageSender.USER)
     }
 
     fun attachSystemMessage(input: String) {
-        attachChatMessage(input, ChatMessageSender.AI)
+        attachChatMessage(input, MessageSender.AI)
     }
 
     private fun attachChatMessage(
         input: String,
-        sender: ChatMessageSender,
-        actions: List<ChatMessageAction> = emptyList()
+        sender: MessageSender,
+        actions: List<String> = emptyList()
     ) {
         if (input.isBlank()) return
-        transitAceSDK.insertChatMessage(
-            input,
-            sender.name,
-            actions
-        )
+        insertChatMessage(input, sender, actions)
     }
 
     fun setupGame(updatedGameSetup: GameSetup, storyLine: StoryLine? = null) {
+        val isEnglish = updatedGameSetup.isEnglish
+        val actions = mutableListOf<String>()
 
-        var chatMessage = ""
-        val actions = mutableListOf<ChatMessageAction>()
+        val chatMessage = when {
+            updatedGameSetup.isOnLanguageStep -> if (isEnglish) "English or Français? Keep it simple, kid"
+            else "Anglais ou Français? Fais simple, gamin"
 
-        when {
-            updatedGameSetup.isOnLanguageStep -> chatMessage = "English or Français? Keep it simple, kid"
-            updatedGameSetup.isOnNameStep -> chatMessage = when (updatedGameSetup.isEnglish) {
-                true -> "Connection established. Welcome to Transit Ace.\n\n" +
-                        "This is a survival simulation. I will generate random crisis scenarios in the Paris Metro—from strikes to supernatural events.\n" +
-                        "Your Goal: Make the right choices to protect your Money, Sanity, and Reputation.\n" +
-                        "What is your name you poor soul?"
+            updatedGameSetup.isOnNameStep -> buildNameStepMessage(isEnglish)
 
-                false -> "Connexion établie. Bienvenue sur Transit Ace.\n\n" +
-                        "Ceci est une simulation de survie. Je générerai des scénarios de crise aléatoires dans le métro—des grèves aux événements surnaturels.\n" +
-                        "Votre But : Faire les bons choix pour protéger votre Argent, votre Santé Mentale et votre Réputation.\n" +
-                        "Quel est ton nom, pauvre âme?"
-            }
+            updatedGameSetup.isOnSelectSimulationStep -> buildSimulationSelectMessage(isEnglish, updatedGameSetup.name)
 
-            updatedGameSetup.isOnSelectSimulationStep -> chatMessage = when (updatedGameSetup.isEnglish) {
-                true -> "Alright ${updatedGameSetup.name}. Select your simulation type: Default or Custom?"
-                false -> "D'accord ${updatedGameSetup.name}. Sélectionnez votre type de simulation : Par défaut ou Personnalisé ?"
-            }
+            updatedGameSetup.isOnScenariosGenRequirementsStep && updatedGameSetup.isCustomSimulation ->
+                buildScenariosRequirementsMessage(isEnglish)
 
-            updatedGameSetup.isOnScenariosGenRequirementsStep && updatedGameSetup.isCustomSimulation -> chatMessage = when(updatedGameSetup.isEnglish) {
-                true -> """So, what is the situation? 
-                |
-                |Briefly describe the plot or the incident for your custom scenario. We'll generate your scenarios based on your story.""".trimMargin()
-
-                false -> """Alors, quelle est la situation ?
-                |
-                |Décris brièvement l'intrigue ou l'incident pour ton scénario personnalisé. Nous générerons tes scénarios à partir de ton histoire.""".trimMargin()
-            }
-
-            updatedGameSetup.isOnScenariosGenerationStep && updatedGameSetup.isCustomSimulation -> chatMessage = when {
-                updatedGameSetup.isEnglish -> "Simulation selected. Generating scenarios..."
-                else -> "Simulation sélectionnée. Génération des scénarios..."
-            }.also {
+            updatedGameSetup.isOnScenariosGenerationStep && updatedGameSetup.isCustomSimulation -> {
                 _uiDataState.value = UIDataState.Loading
+                if (isEnglish) "Simulation selected. Generating scenarios..."
+                else "Simulation sélectionnée. Génération des scénarios..."
             }
 
             updatedGameSetup.isOnScenariosGenerationSuccessStep && updatedGameSetup.isCustomSimulation -> {
-                chatMessage = when {
-                        updatedGameSetup.isEnglish -> """I've prepared your custom scenarios. 
-                    | 
-                    |${storyLine?.title}
-                    |${storyLine?.description}
-                    | 
-                    |Do you want to archive them to play another time, or continue to start the game right now? """
-                            .trimMargin()
-
-                        else -> """J'ai préparé tes scénarios personnalisés. 
-                    |
-                    |${storyLine?.title}
-                    |${storyLine?.description}
-                    |
-                    |Tu veux les **Archiver** pour y jouer une autre fois, ou **Continuer** pour lancer le jeu maintenant ? """
-                            .trimMargin()
-                    }
-                actions.addAll(listOf(ChatMessageAction.PLAY_SCENARIO, ChatMessageAction.SAVE_SCENARIO))
+                actions.addAll(listOf(ChatMessageAction.PLAY_SCENARIO.name, ChatMessageAction.SAVE_SCENARIO.name))
+                buildScenariosSuccessMessage(isEnglish, storyLine)
             }
 
-            updatedGameSetup.isOnScenariosGenerationFailureStep -> chatMessage = when (updatedGameSetup.isEnglish) {
-                true -> """Hmmm. That's unusual. I couldn't get things ready for you. Oh well... delays are normal in Paris. 
-                    |Should A) I try again, or B) would you prefer to just do the default scenario, little one?""".trimMargin()
-
-                false -> """Hmmm. C'est inhabituel. Je n'ai pas réussi à préparer le terrain. Enfin bon... les retards, c'est la norme à Paris. A) Je réessaie, ou B) tu préfères le scénario par défaut, mon petit?"""
-            }.also {
+            updatedGameSetup.isOnScenariosGenerationFailureStep -> {
                 _uiDataState.value = UIDataState.Idle
+                buildScenariosFailureMessage(isEnglish)
             }
 
-            updatedGameSetup.isSetupComplete -> chatMessage = when {
-                updatedGameSetup.isEnglish && !updatedGameSetup.isCustomSimulation -> """Welcome, ${updatedGameSetup.name}. You just arrived to France. 20 years old, low confidence, little funds. Initializing..."""
-                !updatedGameSetup.isEnglish && !updatedGameSetup.isCustomSimulation -> """Bienvenue, ${updatedGameSetup.name}. Vous venez d'arriver en France. 20 ans,
-                    |peu de confiance, peu d'argent. Initialisation...
-                """.trimMargin()
+            updatedGameSetup.isSetupComplete -> buildSetupCompleteMessage(updatedGameSetup)
 
-                else -> {
-                    if (updatedGameSetup.isEnglish) {
-                        """Okay, I am done. Welcome ${updatedGameSetup.name}, to the city of Paris. I wish you well on your journey. You'll need all the luck you can get."""
-                    } else {
-                        """D'accord, j'ai terminé. Bienvenue ${updatedGameSetup.name}, dans la ville de Paris. Je vous souhaite bonne chance pour votre voyage. Vous aurez besoin de toute la chance possible."""
-                    }
-                }
-            }.trimMargin()
+            else -> ""
         }
 
-        attachChatMessage(chatMessage, ChatMessageSender.AI, actions)
+        if (chatMessage.isNotBlank()) {
+            attachChatMessage(chatMessage, MessageSender.AI, actions)
+        }
+    }
+
+    private fun buildNameStepMessage(isEnglish: Boolean) = if (isEnglish) {
+        """English it is! Connection established. Welcome to Transit Ace.
+            |
+            |This is a survival simulation. I will generate random crisis scenarios in the Paris Metro—from strikes to supernatural events.
+            |Your Goal: Make the right choices to protect your Money, Sanity, and Reputation.
+            |What is your name you poor soul?""".trimMargin()
+    } else {
+        """C'est français! Connexion établie. Bienvenue sur Transit Ace.
+            |
+            |Ceci est une simulation de survie. Je générerai des scénarios de crise aléatoires dans le métro—des grèves aux événements surnaturels.
+            |Votre But : Faire les bons choix pour protéger votre Argent, votre Santé Mentale et votre Réputation.
+            |Quel est ton nom, pauvre âme?""".trimMargin()
+    }
+
+    private fun buildSimulationSelectMessage(isEnglish: Boolean, name: String?) = if (isEnglish) {
+        "Alright $name. Select your simulation type: Default or Custom?"
+    } else {
+        "D'accord $name. Sélectionnez votre type de simulation : Par défaut ou Personnalisé ?"
+    }
+
+    private fun buildScenariosRequirementsMessage(isEnglish: Boolean) = if (isEnglish) {
+        """So, what is the situation? 
+            |
+            |Briefly describe the plot or the incident for your custom scenario. We'll generate your scenarios based on your story.""".trimMargin()
+    } else {
+        """Alors, quelle est la situation ?
+            |
+            |Décris brièvement l'intrigue ou l'incident pour ton scénario personnalisé. Nous générerons tes scénarios à partir de ton histoire.""".trimMargin()
+    }
+
+    private fun buildScenariosSuccessMessage(isEnglish: Boolean, storyLine: StoryLine?) = if (isEnglish) {
+        """I've prepared your custom scenarios. 
+            | 
+            |${storyLine?.title}
+            |${storyLine?.description}
+            | 
+            |Do you want to archive them to play another time, or continue to start the game right now?""".trimMargin()
+    } else {
+        """J'ai préparé tes scénarios personnalisés. 
+            |
+            |${storyLine?.title}
+            |${storyLine?.description}
+            |
+            |Tu veux les **Archiver** pour y jouer une autre fois, ou **Continuer** pour lancer le jeu maintenant ?""".trimMargin()
+    }
+
+    private fun buildScenariosFailureMessage(isEnglish: Boolean) = if (isEnglish) {
+        """Hmmm. That's unusual. I couldn't get things ready for you. Oh well... delays are normal in Paris. 
+            |Should A) I try again, or B) would you prefer to just do the default scenario, little one?""".trimMargin()
+    } else {
+        "Hmmm. C'est inhabituel. Je n'ai pas réussi à préparer le terrain. Enfin bon... les retards, c'est la norme à Paris. A) Je réessaie, ou B) tu préfères le scénario par défaut, mon petit?"
+    }
+
+    private fun buildSetupCompleteMessage(gameSetup: GameSetup) = when {
+        gameSetup.isEnglish && !gameSetup.isCustomSimulation ->
+            "Welcome, ${gameSetup.name}. You just arrived in France. 20 years old, low confidence, little funds. Initializing..."
+
+        !gameSetup.isEnglish && !gameSetup.isCustomSimulation ->
+            """Bienvenue, ${gameSetup.name}. Vous venez d'arriver en France. 20 ans,
+                |peu de confiance, peu d'argent. Initialisation...""".trimMargin()
+
+        gameSetup.isEnglish ->
+            "Okay, I am done. Welcome ${gameSetup.name}, to the city of Paris. I wish you well on your journey. You'll need all the luck you can get."
+
+        else ->
+            "D'accord, j'ai terminé. Bienvenue ${gameSetup.name}, dans la ville de Paris. Je vous souhaite bonne chance pour votre voyage. Vous aurez besoin de toute la chance possible."
     }
 
     fun sendInGameMessage(
@@ -178,88 +195,85 @@ internal class ChatViewModel(private val transitAceSDK: TransitAceSDK) : ViewMod
         gameContext: String? = null
     ) {
         viewModelScope.launch {
-            val result = transitAceSDK.sendUserChatMessage(message, ChatMessageSender.USER.name, !gameSetup.isEnglish, gameContext = gameContext)
             val isFrench = !gameSetup.isEnglish
 
-            when(result.data){
-                is ChatResult.ExecuteCommand -> {
-                    val command = result.data.command
-                    val aiResponseMsg = if (!isFrench) "> EXECUTING PROTOCOL:" else
-                        "> EXÉCUTION DU PROTOCOLE :"
+            val result = sendChatMessage(
+                message = message,
+                isFrench = isFrench,
+                gameContext = gameContext
+            )
 
-                    // Show a "System Log" so the user sees something happened
-                    transitAceSDK.insertChatMessage(
-                        aiResponseMsg + command.uppercase(),
-                        ChatMessageSender.AI.name
-                    )
-
-                    // Do the actual work
-                    when (command) {
-                        FunctionDeclaration.DECL_GET_ALL_STORYLINES -> {
-                            val stories = transitAceSDK.getAllStories().joinToString("\n") { "- ${it.title}" }
-                            var responseMessage = ""
-
-                            responseMessage = if (stories.isEmpty()) {
-                                if (!isFrench) {
-                                    "No stories available at the moment."
-                                } else {
-                                    "Aucune histoire disponible pour le moment."
-                                }
-                            } else {
-                                if (!isFrench) {
-                                    "AVAILABLE FILES:\n$stories"
-                                } else {
-                                    "FICHIERS DISPONIBLES:\n$stories"
-                                }
-                            }
-
-                            attachChatMessage(
-                                responseMessage,
-                                ChatMessageSender.AI
-                            )
-                        }
-
-                        FunctionDeclaration.DECL_SHOW_HELP -> {
-                            attachChatMessage(
-                                (if (!isFrench) {
-                                    """- "Show me all storylines"
-                                    |- "Load [name] scenario"
-                                    |- "Reset this level"
-                                    |- "Help"
-                                    """.trimMargin()
-                                } else {
-                                    """- "Montre-moi toutes les intrigues"
-                                    |- "Charge le scénario [nom]"
-                                    |- "Réinitialise ce niveau"
-                                    |- "Aide"
-                                    """.trimMargin()
-                                }).trimIndent(),
-                                ChatMessageSender.AI
-                            )
-                        }
-
-                        else -> {
-                            _uiDataState.value = UIDataState.Success.ChatResponse(
-                                command = result.data,
-                                sentMessage = message
-                            )
-                        }
+            result.onSuccess { response ->
+                when (response) {
+                    is ChatAIResponse.ExecuteCommand -> {
+                        handleCommand(response.command, response.arg, isFrench)
+                    }
+                    is ChatAIResponse.TextResponse -> {
+                        // Already saved by use case
+                    }
+                    is ChatAIResponse.NoResponse -> {
+                        // Do nothing
                     }
                 }
-
-                else -> {}
             }
         }
     }
 
-    fun updateGameMessageWithAction(selectedActionName: String, messageIdToUpdate: Long) {
+    private fun handleCommand(command: String, arg: String?, isFrench: Boolean) {
+        val protocolPrefix = if (isFrench) "> EXÉCUTION DU PROTOCOLE: " else "> EXECUTING PROTOCOL: "
+        attachChatMessage(protocolPrefix + command.uppercase(), MessageSender.AI)
+
         viewModelScope.launch {
-            transitAceSDK.updateChatMessage(selectedActionName, messageIdToUpdate)
+            when (command) {
+                FunctionDeclaration.DECL_GET_ALL_STORYLINES -> handleGetAllStorylines(isFrench)
+                FunctionDeclaration.DECL_SHOW_HELP -> handleShowHelp(isFrench)
+                FunctionDeclaration.DECL_LOAD_STORYLINE -> {
+                    arg?.toLongOrNull()?.let { storyId ->
+                        _events.emit(ChatEvent.LoadStory(storyId, isFrench))
+                    }
+                }
+                FunctionDeclaration.DECL_RESTART_GAME -> {
+                    _events.emit(ChatEvent.RestartGame(isFrench))
+                }
+            }
         }
     }
 
-    fun clearAllChats() {
-        transitAceSDK.clearChat()
+    private fun handleGetAllStorylines(isFrench: Boolean) {
+        val stories = storyRepository.getAllStories().joinToString("\n") { "- ${it.title}" }
+
+        val responseMessage = when {
+            stories.isEmpty() && isFrench -> "Aucune histoire disponible pour le moment."
+            stories.isEmpty() -> "No stories available at the moment."
+            isFrench -> "FICHIERS DISPONIBLES:\n$stories"
+            else -> "AVAILABLE FILES:\n$stories"
+        }
+
+        attachChatMessage(responseMessage, MessageSender.AI)
     }
 
+    private fun handleShowHelp(isFrench: Boolean) {
+        val helpMessage = if (isFrench) {
+            """- "Montre-moi toutes les intrigues"
+                |- "Charge le scénario [nom]"
+                |- "Réinitialise ce niveau"
+                |- "Aide"""".trimMargin()
+        } else {
+            """- "Show me all storylines"
+                |- "Load [name] scenario"
+                |- "Reset this level"
+                |- "Help"""".trimMargin()
+        }
+        attachChatMessage(helpMessage, MessageSender.AI)
+    }
+
+    fun updateGameMessageWithAction(selectedActionName: String, messageIdToUpdate: Long) {
+        viewModelScope.launch {
+            chatRepository.updateMessageSelectedAction(selectedActionName, messageIdToUpdate)
+        }
+    }
+
+    fun clearUIState() {
+        _uiDataState.value = UIDataState.Idle
+    }
 }

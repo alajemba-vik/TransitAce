@@ -20,7 +20,7 @@
     <string name="home_button_acc_description">Back to Home</string>
     <string name="landing_landed_desc">Welcome to the Paris Transit Survival Simulator. The rules are strict. The fines are real. The inspectors are merciless.\nYour goal: Navigate the city without going broke.</string>
     <string name="landing_official">SYSTÈME OFFICIEL</string>
-    <string name="landing_build">BUILD: 2025.SUBMIT.V1</string>
+    <string name="landing_build">BUILD: 2026.SUBMIT.V1</string>
     <string name="landing_id">ID: FR-VIK-JE-TRANSIT-001-</string>
     <string name="landing_heading">PARIS TRANSIT ACE: THE IMAGINE R RACE</string>
     <string name="landing_year_changed">A lot has changed:</string>
@@ -35,7 +35,7 @@
     <string name="landing_guide_desc">She's sarcastic, blunt, and your only hope.</string>
     <string name="landing_click_to_begin">[CLICK TO BEGIN]</string>
     <string name="landing_begin_simulation">BEGIN SIMULATION</string>
-    <string name="landing_footer">A VIKI-JE GAME • LIVE LIFE\n• EDUCATIONAL GAME • NOT FOR COLLECTING PII •\nEST. 2025</string>
+    <string name="landing_footer">A VIKI-JE GAME • LIVE LIFE\n• EDUCATIONAL GAME • NOT FOR COLLECTING PII •\nEST. 2026</string>
     <string name="landing_skip_intro">[ SKIP INTRO >> ]</string>
     <string name="play_custom_scenario_button_label">Run</string>
     <string name="save_custom_scenario_button_label">Save</string>

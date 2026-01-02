@@ -1,6 +1,8 @@
 package com.alajemba.paristransitace
 
 import android.app.Application
+import com.alajemba.paristransitace.di.androidModule
+import com.alajemba.paristransitace.di.commonModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 

@@ -20,7 +20,7 @@
     <string name="landing_title">Simulation Initialisée</string>
     <string name="landing_landed_desc">Bienvenue dans le Simulateur de Survie du Métro Parisien. Les règles sont strictes. Les amendes sont réelles. Les contrôleurs sont sans pitié.\nVotre mission : Naviguer dans la ville sans finir ruiné.</string>
     <string name="landing_official">SYSTÈME OFFICIEL</string>
-    <string name="landing_build">BUILD : 2025.REFORM.V1</string>
+    <string name="landing_build">BUILD : 2026.REFORM.V1</string>
     <string name="landing_id">ID : FR-75-IDF-001</string>
     <string name="landing_heading">PARIS TRANSIT ACE : LA COURSE IMAGINE R</string>
     <string name="landing_year_changed">Tout a changé :</string>
@@ -35,7 +35,7 @@
     <string name="landing_guide_desc">Elle est sarcastique, cash, et votre seule chance.</string>
     <string name="landing_click_to_begin">[CLIQUER POUR COMMENCER]</string>
     <string name="landing_begin_simulation">LANCER LA SIMULATION</string>
-    <string name="landing_footer">UN JEU VIKI-J • VIVEZ VOTRE VIE\n• JEU ÉDUCATIF • NE PAS COLLECTER DE DONNÉES PERSONNELLES •\nÉTABLI EN 2025</string>
+    <string name="landing_footer">UN JEU VIKI-J • VIVEZ VOTRE VIE\n• JEU ÉDUCATIF • NE PAS COLLECTER DE DONNÉES PERSONNELLES •\nÉTABLI EN 2026</string>
     <string name="home_button_acc_description">Retour à l'accueil</string>
     <string name="landing_skip_intro">PASSER L'INTRO &gt;&gt;</string>
     <string name="play_custom_scenario_button_label">Lancer</string>

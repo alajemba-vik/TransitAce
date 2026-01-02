@@ -1,6 +1,6 @@
 TEAM_ID=
 
-PRODUCT_NAME=ParisTransitAce
+PRODUCT_NAME=Transit Ace
 PRODUCT_BUNDLE_IDENTIFIER=com.alajemba.paristransitace.ParisTransitAce$(TEAM_ID)
 
 CURRENT_PROJECT_VERSION=1

@@ -16,7 +16,7 @@ val DimGray = Color(0xFF7c6f64)
 val BorderGray = Color(0xFF504945)
 
 // The Alerts (Status)
-val AlertRed = Color(0xFFfb4934)        // Your custom Red (Brighter for dark mode)
+val AlertRed = Color(0xFFfb4934)        // Custom Red (Brighter for dark mode)
 val CrimsonRed = Color(0xFFcc241d)
 val SuccessGreen = Color(0xFF4CAF50)    // For correct choices
 val ElectricBlue = Color(0xFF83a598)    // For "System" messages (Optional but good to have)
@@ -53,7 +53,7 @@ val TerminalColors = darkColorScheme(
     surfaceVariant = PanelBlack, // Useful for "Map Case" or "Inventory"
     onSurfaceVariant = DimGray,
 
-    // Outlines: The borders of your terminal windows
+    // Outlines: The borders of the terminal windows
     outline = BorderGray,
     outlineVariant = DimGray.copy(alpha = 0.5f),
 

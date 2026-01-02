@@ -78,7 +78,12 @@ fun appTypography(): Typography {
             fontSize = 16.sp,
             lineHeight = 22.sp
         ),
-
+        bodySmall = TextStyle(
+            fontFamily = crimsonPro,
+            fontWeight = FontWeight.Normal,
+            fontSize = 14.sp,
+            lineHeight = 22.sp
+        ),
         // LABEL (Buttons, Tags, Status Bars) -> VT323
         labelLarge = TextStyle(
             fontFamily = vt323,

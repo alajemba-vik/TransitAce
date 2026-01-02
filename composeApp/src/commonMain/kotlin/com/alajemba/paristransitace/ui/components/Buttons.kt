@@ -22,6 +22,7 @@ import paristransitace.composeapp.generated.resources.home_button_acc_descriptio
 
 @Composable
 fun ActionButton(
+    modifier: Modifier = Modifier,
     label: String,
     onClick: () -> Unit,
     isEnabled: Boolean = true,
@@ -30,6 +31,7 @@ fun ActionButton(
 ) {
 
     TextButton(
+        modifier = modifier,
         enabled = isEnabled,
         colors = colors ?: ButtonDefaults.textButtonColors(
             containerColor = RetroAmber,
@@ -46,19 +48,4 @@ fun ActionButton(
         shape = RoundedCornerShape(0.dp),
 
     )
-}
-
-@Composable
-fun HomeButton(onHomeClick: () -> Unit) {
-    val iconSize = 38.dp
-
-    IconButton(
-        onClick = onHomeClick, modifier = Modifier.size(iconSize)
-    ) {
-        Icon(
-            imageVector = Icons.Outlined.Home,
-            contentDescription = stringResource(Res.string.home_button_acc_description),
-            tint = RetroAmber.copy(alpha = 0.7f)
-        )
-    }
 }

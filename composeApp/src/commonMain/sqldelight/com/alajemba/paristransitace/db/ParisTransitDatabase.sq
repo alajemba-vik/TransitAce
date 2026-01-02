@@ -1,3 +1,4 @@
+
 CREATE TABLE Settings (
     key TEXT NOT NULL PRIMARY KEY,
     value TEXT NOT NULL
@@ -62,6 +63,12 @@ DELETE FROM StoryEntity WHERE id = ?;
 deleteScenariosForStory:
 DELETE FROM ScenarioEntity WHERE parent_story_id = ?;
 
+removeAllStories:
+DELETE FROM StoryEntity;
+
+removeAllScenarios:
+DELETE FROM ScenarioEntity;
+
 
 CREATE TABLE ChatMessages (
     id INTEGER NOT NULL PRIMARY KEY,
@@ -84,7 +91,6 @@ DELETE FROM ChatMessages;
 
 selectAllChatMessages:
 SELECT * FROM ChatMessages;
-
 
 lastInsertedRowId:
 SELECT last_insert_rowid();
