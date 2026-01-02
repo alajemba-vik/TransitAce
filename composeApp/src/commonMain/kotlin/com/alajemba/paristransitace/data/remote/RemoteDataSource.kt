@@ -14,8 +14,10 @@ interface RemoteDataSource {
         plot: String
     ): Result<ScenariosWrapper>
 
+    /**
+     *  The most recent message should be the last in the chatHistory list.
+     */
     suspend fun sendChatMessage(
-        message: String,
         chatHistory: List<ChatMessage>,
         storyLines: List<StoryLine>,
         gameContext: String?

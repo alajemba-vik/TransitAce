@@ -75,7 +75,6 @@ internal fun HomeScreen(
         launch {
             gameViewModel.gameDataState.collect { gameDataValue ->
                 if (gameDataValue is UIDataState.Success.ScenariosGenerated) {
-                    println("Scenarios generated successfully.")
                     userViewModel.setupGame(scenariosGenerationStatus = ScenarioGenerationStatus.SUCCESS)
                 } else if (gameDataValue is UIDataState.Error) {
                     userViewModel.setupGame(scenariosGenerationStatus = ScenarioGenerationStatus.FAILURE)

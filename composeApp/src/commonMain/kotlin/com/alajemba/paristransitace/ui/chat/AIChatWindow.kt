@@ -86,6 +86,7 @@ fun AIChatWindow(
             Spacer(modifier = Modifier.height(Dimens.Space.small))
 
             Footer(
+                modifier = Modifier.padding(horizontal = Dimens.Space.medium),
                 if (!isInActiveGame) null else "Type \"help\" to see available actions | Tapez \"aide\" pour voir les actions"
             )
         }
@@ -227,8 +228,8 @@ private fun MessageCard(
 }
 
 @Composable
-fun Footer(text: String?) {
-    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+fun Footer(modifier: Modifier = Modifier, text: String?) {
+    Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         Text(
             text = text?.uppercase() ?: stringResource(Res.string.chat_window_provide_language_instruction),
             style = MaterialTheme.typography.labelMedium,

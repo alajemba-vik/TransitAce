@@ -10,10 +10,8 @@ sealed class UIDataState {
     }
 
     sealed class Error : UIDataState() {
-        object NetworkError : UIDataState.Error()
-        object AIError : Error()
-
-
+        data object NetworkError : Error()
+        data object AIError : Error()
     }
 }
 

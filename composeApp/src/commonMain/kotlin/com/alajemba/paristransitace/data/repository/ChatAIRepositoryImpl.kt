@@ -10,14 +10,12 @@ class ChatAIRepositoryImpl(
     private val remoteDataSource: RemoteDataSource
 ) : ChatAIRepository {
 
-    override suspend fun sendMessage(
-        message: String,
+    override suspend fun sendChatMessage(
         chatHistory: List<ChatMessage>,
         storyLines: List<StoryLine>,
         gameContext: String?
     ): Result<ChatAIResponse> {
         return remoteDataSource.sendChatMessage(
-            message = message,
             chatHistory = chatHistory,
             storyLines = storyLines,
             gameContext = gameContext

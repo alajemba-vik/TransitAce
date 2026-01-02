@@ -10,29 +10,24 @@ import com.alajemba.paristransitace.domain.usecase.chat.InsertChatMessageUseCase
 import com.alajemba.paristransitace.domain.usecase.chat.SendChatMessageUseCase
 import com.alajemba.paristransitace.data.remote.model.FunctionDeclaration
 import com.alajemba.paristransitace.domain.repository.ChatRepository
+import com.alajemba.paristransitace.domain.repository.GameSessionRepository
 import com.alajemba.paristransitace.domain.repository.StoryRepository
 import com.alajemba.paristransitace.ui.mapper.toChatUiModel
 import com.alajemba.paristransitace.ui.model.ChatMessageAction
 import com.alajemba.paristransitace.ui.model.ChatMessageSender
 import com.alajemba.paristransitace.ui.model.ChatUiModel
 import com.alajemba.paristransitace.ui.model.UIDataState
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-
-sealed class ChatEvent {
-    data class LoadStory(val storyId: Long, val isFrench: Boolean) : ChatEvent()
-    data class RestartGame(val isFrench: Boolean) : ChatEvent()
-}
 
 internal class ChatViewModel(
     private val insertChatMessage: InsertChatMessageUseCase,
     private val sendChatMessage: SendChatMessageUseCase,
     private val storyRepository: StoryRepository,
-    private val chatRepository: ChatRepository
+    private val chatRepository: ChatRepository,
+    private val gameSessionRepository: GameSessionRepository
 ) : ViewModel() {
 
     private val _chatMessages = MutableStateFlow(emptyList<ChatUiModel>())
@@ -40,9 +35,6 @@ internal class ChatViewModel(
 
     private val _uiDataState: MutableStateFlow<UIDataState> = MutableStateFlow(UIDataState.Idle)
     val isLoading = _uiDataState.asStateFlow().map { it is UIDataState.Loading }
-
-    private val _events = MutableSharedFlow<ChatEvent>()
-    val events: SharedFlow<ChatEvent> = _events
 
     private val initialMessage = ChatUiModel(
         id = -1L,
@@ -223,20 +215,32 @@ internal class ChatViewModel(
         val protocolPrefix = if (isFrench) "> EXÉCUTION DU PROTOCOLE: " else "> EXECUTING PROTOCOL: "
         attachChatMessage(protocolPrefix + command.uppercase(), MessageSender.AI)
 
-        viewModelScope.launch {
-            when (command) {
-                FunctionDeclaration.DECL_GET_ALL_STORYLINES -> handleGetAllStorylines(isFrench)
-                FunctionDeclaration.DECL_SHOW_HELP -> handleShowHelp(isFrench)
-                FunctionDeclaration.DECL_LOAD_STORYLINE -> {
-                    arg?.toLongOrNull()?.let { storyId ->
-                        _events.emit(ChatEvent.LoadStory(storyId, isFrench))
-                    }
-                }
-                FunctionDeclaration.DECL_RESTART_GAME -> {
-                    _events.emit(ChatEvent.RestartGame(isFrench))
+        when (command) {
+            FunctionDeclaration.DECL_GET_ALL_STORYLINES -> handleGetAllStorylines(isFrench)
+            FunctionDeclaration.DECL_SHOW_HELP -> handleShowHelp(isFrench)
+            FunctionDeclaration.DECL_LOAD_STORYLINE -> {
+                arg?.toLongOrNull()?.let { storyId ->
+                    handleLoadStory(storyId, isFrench)
                 }
             }
+            FunctionDeclaration.DECL_RESTART_GAME -> handleRestartGame(isFrench)
         }
+    }
+
+    private fun handleLoadStory(storyId: Long, isFrench: Boolean) {
+        val success = gameSessionRepository.loadStoryForSession(storyId)
+        val message = if (success) {
+            if (isFrench) "Scénario chargé." else "Scenario loaded."
+        } else {
+            if (isFrench) "Scénario introuvable." else "Scenario not found."
+        }
+        attachSystemMessage(message)
+    }
+
+    private fun handleRestartGame(isFrench: Boolean) {
+        gameSessionRepository.clearCurrentScenario()
+        val message = if (isFrench) "Simulation réinitialisée." else "Simulation reset."
+        attachSystemMessage(message)
     }
 
     private fun handleGetAllStorylines(isFrench: Boolean) {

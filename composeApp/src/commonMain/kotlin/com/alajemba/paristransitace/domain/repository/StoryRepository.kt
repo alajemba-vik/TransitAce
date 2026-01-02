@@ -13,6 +13,8 @@ interface StoryRepository {
         plot: String
     ): Result<ScenariosWrapper>
 
+    fun getStory(storyId: Long): StoryLine?
+
     fun getAllStories(): List<StoryLine>
     fun saveStoryLine(storyLine: StoryLine, scenarios: List<Scenario>)
     fun loadScenariosForStory(storyId: Long): List<Scenario>

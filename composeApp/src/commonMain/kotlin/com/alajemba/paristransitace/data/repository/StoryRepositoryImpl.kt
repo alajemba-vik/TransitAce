@@ -45,6 +45,18 @@ class StoryRepositoryImpl(
         }
     }
 
+    override fun getStory(storyId: Long): StoryLine ? {
+        val entity = localDataSource.getStoryById(storyId) ?: return null
+        return StoryLine(
+            id = entity.id,
+            title = entity.title,
+            description = entity.description ?: "",
+            timeCreated = entity.timeCreated,
+            initialBudget = entity.initialBudget ?: .0,
+            initialMorale = entity.initialMorale?.toInt() ?: 0
+        )
+    }
+
     override fun saveStoryLine(storyLine: StoryLine, scenarios: List<Scenario>) {
         localDataSource.runInTransaction {
             val storyId = localDataSource.insertStory(

@@ -11,6 +11,7 @@ class SendChatMessageUseCase(
     private val chatAIRepository: ChatAIRepository,
     private val storyRepository: StoryRepository
 ) {
+
     suspend operator fun invoke(
         message: String,
         isFrench: Boolean,
@@ -21,8 +22,10 @@ class SendChatMessageUseCase(
         val chatHistory = chatRepository.getAllMessagesSync()
         val storyLines = storyRepository.getAllStories()
 
-        val result = chatAIRepository.sendMessage(
-            message = message,
+        print("Sending message to ChatAIRepository: $message")
+        println(" with gameContext: ${chatHistory.joinToString { it.message }}")
+
+        val result = chatAIRepository.sendChatMessage(
             chatHistory = chatHistory,
             storyLines = storyLines,
             gameContext = gameContext

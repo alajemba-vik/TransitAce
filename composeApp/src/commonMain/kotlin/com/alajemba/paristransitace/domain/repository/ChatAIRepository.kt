@@ -4,8 +4,7 @@ import com.alajemba.paristransitace.domain.model.ChatMessage
 import com.alajemba.paristransitace.domain.model.StoryLine
 
 interface ChatAIRepository {
-    suspend fun sendMessage(
-        message: String,
+    suspend fun sendChatMessage(
         chatHistory: List<ChatMessage>,
         storyLines: List<StoryLine>,
         gameContext: String?

@@ -49,7 +49,7 @@ internal fun GameScreen(
 
     val currentScenarioState by gameViewModel.currentScenario.collectAsStateWithLifecycle()
     val userStatsState by userViewModel.userStatsState.collectAsStateWithLifecycle()
-    val scenarioProgressState by gameViewModel.scenarioProgress.collectAsStateWithLifecycle()
+    val scenarioProgressState by gameViewModel.scenarioProgress.collectAsStateWithLifecycle(0f)
 
     var showComms by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)

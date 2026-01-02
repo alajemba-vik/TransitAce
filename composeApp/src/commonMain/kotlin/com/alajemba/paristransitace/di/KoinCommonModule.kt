@@ -50,6 +50,9 @@ val commonModule = module {
 
     single<StoryRepository> { StoryRepositoryImpl(get(), get()) }
 
+    // Game Session - single source of truth for current game state
+    single<GameSessionRepository> { GameSessionRepositoryImpl(get()) }
+
     // Use Cases
     // General Use Cases
     factory { ClearAppStateUseCase(get(), get(), get()) }
@@ -69,19 +72,9 @@ val commonModule = module {
         ParisTransitDatabase(get<DatabaseDriverFactory>().createDriver())
     }
 
-    single {
-        ChatViewModel(get(), get(), get(), get())
-    }
+    // ViewModels - viewModelOf handles scoping automatically
     viewModelOf(::ChatViewModel)
-
-    single {
-        UserViewModel(get(), get())
-    }
     viewModelOf(::UserViewModel)
-
-    single {
-        GameViewModel(get(), get(), get())
-    }
     viewModelOf(::GameViewModel)
 
 }

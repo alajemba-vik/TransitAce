@@ -11,11 +11,9 @@ import com.alajemba.paristransitace.domain.model.GameLanguage
 import com.alajemba.paristransitace.ui.game.GameScreen
 import com.alajemba.paristransitace.ui.home.HomeScreen
 import com.alajemba.paristransitace.ui.landing.LandingScreen
-import com.alajemba.paristransitace.ui.viewmodels.ChatEvent
 import com.alajemba.paristransitace.ui.viewmodels.ChatViewModel
 import com.alajemba.paristransitace.ui.viewmodels.GameViewModel
 import com.alajemba.paristransitace.ui.viewmodels.UserViewModel
-import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
 
@@ -26,45 +24,24 @@ fun AppNavHost() {
     val chatViewModel = koinViewModel<ChatViewModel>()
     val gameViewModel = koinViewModel<GameViewModel>()
 
-
-
     fun clearAppState() {
         userViewModel.clearAllInfo()
         gameViewModel.clearUIState()
         chatViewModel.clearUIState()
     }
 
-    LaunchedEffect(Unit) {
-
-        launch {
-            chatViewModel.events.collect { event ->
-                when(event){
-                    is ChatEvent.LoadStory -> {
-                        gameViewModel.loadStory(event.storyId)
-                        chatViewModel.attachSystemMessage(
-                            if (!event.isFrench) "Scenario loaded." else "Scénario chargé."
-                        )
-                    }
-                    is ChatEvent.RestartGame -> {
-                        gameViewModel.startGame()
-                        chatViewModel.attachSystemMessage(
-                            if (!event.isFrench) "Simulation reset." else "Simulation réinitialisée."
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-
-    when(val hasSeenLanding = userViewModel.hasSeenLandingScreen.collectAsStateWithLifecycle().value) {
+    when(val lastSessionCheckpoint = userViewModel.lastSessionCheckpoint.collectAsStateWithLifecycle().value) {
         null -> {
             // Still loading
         }
         else -> {
             NavHost(
                 navController = navController,
-                startDestination = if (hasSeenLanding) HomeRoute else LandingRoute,
+                startDestination = when(lastSessionCheckpoint.lowercase()) {
+                    GameRoute.label -> GameRoute
+                    HomeRoute.label -> HomeRoute
+                    else -> LandingRoute
+                },
             ) {
                 composable<LandingRoute> {
                     LandingScreen(
@@ -81,12 +58,10 @@ fun AppNavHost() {
                     )
 
                     LaunchedEffect(Unit) {
-                        launch {
-                            Locale.current.toLanguageTag().startsWith(GameLanguage.FRENCH.languageTag, ignoreCase = true).let { isFrench ->
-                                userViewModel.setDeviceLanguage(
-                                    if (isFrench) GameLanguage.FRENCH else GameLanguage.ENGLISH
-                                )
-                            }
+                        Locale.current.toLanguageTag().startsWith(GameLanguage.FRENCH.languageTag, ignoreCase = true).let { isFrench ->
+                            userViewModel.setDeviceLanguage(
+                                if (isFrench) GameLanguage.FRENCH else GameLanguage.ENGLISH
+                            )
                         }
 
                         userViewModel.setHasSeenLandingScreen()
@@ -114,6 +89,10 @@ fun AppNavHost() {
                             }
                         }
                     )
+
+                    LaunchedEffect(Unit){
+                        userViewModel.wasOnHomeScreen()
+                    }
                 }
 
                 composable<GameRoute> {
@@ -130,6 +109,10 @@ fun AppNavHost() {
                             }
                         }
                     )
+
+                    LaunchedEffect(Unit){
+                        userViewModel.wasOnGameScreen()
+                    }
                 }
             }
         }

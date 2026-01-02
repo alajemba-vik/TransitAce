@@ -2,13 +2,22 @@ package com.alajemba.paristransitace.ui.navigation
 
 import kotlinx.serialization.Serializable
 
-@Serializable
-object LandingRoute
-
-
-@Serializable
-object HomeRoute
+interface NavigationRoute {
+    val label: String
+}
 
 @Serializable
-object GameRoute
+object LandingRoute : NavigationRoute {
+    override val label = "landing"
+}
 
+
+@Serializable
+object HomeRoute : NavigationRoute {
+    override val label = "home"
+}
+
+@Serializable
+object GameRoute : NavigationRoute {
+    override val label = "game"
+}

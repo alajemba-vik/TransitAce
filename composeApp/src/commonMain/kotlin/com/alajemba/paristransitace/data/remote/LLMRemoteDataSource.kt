@@ -76,7 +76,6 @@ class LLMRemoteDataSource(
     }
 
     override suspend fun sendChatMessage(
-        message: String,
         chatHistory: List<ChatMessage>,
         storyLines: List<StoryLine>,
         gameContext: String?
@@ -87,11 +86,7 @@ class LLMRemoteDataSource(
                     role = if (chatMessage.sender == MessageSender.USER) "user" else "model",
                     parts = listOf(Part(text = chatMessage.message))
                 )
-            } + Content(
-                parts = listOf(Part(text = message)),
-                role = "user"
-            )
-
+            }
 
             val requestBody = GeminiRequest(
                 systemInstruction = Parts(
@@ -130,7 +125,6 @@ class LLMRemoteDataSource(
     }
 
     private fun parseScenarioResponse(response: String): Result<ScenariosWrapper> {
-        print("\n\n\n\n\nScenario Response: $response\n\n\n\n\n")
 
         return try {
             val jsonResponse = json.parseToJsonElement(response)
@@ -159,8 +153,6 @@ class LLMRemoteDataSource(
                 )
             )
         } catch (e: Exception) {
-            print("\n\n\n\n\nScenario Parsing Error: ${e.message}\n\n\n\n\n"
-            )
             Result.failure(e)
         }
     }

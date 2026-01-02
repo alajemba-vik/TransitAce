@@ -53,6 +53,9 @@ INSERT OR REPLACE INTO ScenarioEntity(
 selectAllStories:
 SELECT * FROM StoryEntity;
 
+getStoryById:
+SELECT * FROM StoryEntity WHERE id = ?;
+
 selectAllScenariosForStory:
 SELECT * FROM ScenarioEntity
 WHERE parent_story_id = ?;

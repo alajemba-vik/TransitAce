@@ -13,7 +13,7 @@ class SettingsRepositoryImpl(
     companion object {
         private const val KEY_LANGUAGE = "language"
         private const val KEY_PLAYER_NAME = "player_name"
-        private const val KEY_INITIAL_LOAD = "initial_load"
+        private const val KEY_LAST_SESSION_CHECKPOINT = "initial_load"
     }
 
     override fun getLanguage(): Flow<GameLanguage?> {
@@ -42,12 +42,11 @@ class SettingsRepositoryImpl(
         localDataSource.clearAllSettings()
     }
 
-    override fun saveInitialLoad() {
-        localDataSource.saveSetting(KEY_INITIAL_LOAD, "true")
+    override fun saveSessionCheckpoint(checkpointLabel: String) {
+        localDataSource.saveSetting(KEY_LAST_SESSION_CHECKPOINT, checkpointLabel)
     }
 
-    override suspend fun getInitialLoad(): Boolean {
-        val result = localDataSource.getSettingSync(KEY_INITIAL_LOAD)
-        return result?.lowercase() == "true"
+    override suspend fun lastSessionCheckpoint(): String? {
+        return  localDataSource.getSettingSync(KEY_LAST_SESSION_CHECKPOINT)
     }
 }

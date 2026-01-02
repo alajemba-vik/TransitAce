@@ -10,7 +10,7 @@ interface SettingsRepository {
     fun savePlayerName(name: String)
     fun clearAllSettings()
 
-    fun saveInitialLoad()
+    fun saveSessionCheckpoint(checkpointLabel: String)
 
-    suspend fun getInitialLoad(): Boolean
+    suspend fun lastSessionCheckpoint(): String?
 }

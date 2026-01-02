@@ -8,51 +8,49 @@ import com.alajemba.paristransitace.domain.model.GameReport
 import com.alajemba.paristransitace.domain.model.GameSetup
 import com.alajemba.paristransitace.domain.model.Scenario
 import com.alajemba.paristransitace.domain.model.StoryLine
+import com.alajemba.paristransitace.domain.repository.GameSessionRepository
 import com.alajemba.paristransitace.domain.repository.StoryRepository
 import com.alajemba.paristransitace.domain.usecase.game.CalculateFinalGradeUseCase
 import com.alajemba.paristransitace.ui.model.UIDataState
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 internal class GameViewModel(
     private val calculateFinalGrade: CalculateFinalGradeUseCase,
     private val defaultScenariosProvider: DefaultScenariosProvider,
-    private val storyRepository: StoryRepository
+    private val storyRepository: StoryRepository,
+    private val gameSessionRepository: GameSessionRepository
 ) : ViewModel() {
 
     private val _uiDataState = MutableStateFlow<UIDataState>(UIDataState.Loading)
     val gameDataState = _uiDataState.asStateFlow()
 
-    private var _currentStoryLine = StoryLine.EMPTY
-    val storyLine: StoryLine
-        get() = _currentStoryLine
-
-    private val _scenariosState = MutableStateFlow(emptyList<Scenario>())
-
-    private val _currentScenario = MutableStateFlow<Scenario?>(null)
-    val currentScenario = _currentScenario.asStateFlow()
-
-    private val _scenarioProgress = MutableStateFlow(0f)
-    val scenarioProgress = _scenarioProgress.asStateFlow()
-
-    val scenarioProgressText = _currentScenario.asStateFlow().map { current ->
-        val index = current?.currentIndexInGame ?: 0
-        val total = _scenariosState.value.size
-        "$index/$total"
-    }
+    val storyLine: StoryLine get() = gameSessionRepository.currentStoryLine
+    val currentScenario: StateFlow<Scenario?> = gameSessionRepository.currentScenario
+    val scenarioProgress: Flow<Float> = gameSessionRepository.scenarioProgress.stateIn(
+        viewModelScope,
+        SharingStarted.Eagerly,
+        0f)
+    val scenarioProgressText: Flow<String> = gameSessionRepository.scenarioProgressText.stateIn(
+        viewModelScope,
+        SharingStarted.Eagerly,
+        ""
+    )
 
     private val _gameReport = MutableStateFlow(GameReport.EMPTY)
     val gameReport = _gameReport.asStateFlow()
 
-    private var lastUsedTransitRulesJson: String? = null
-
     fun getGameContext(): String {
-        if (_currentStoryLine.title.isBlank()) return ""
+        if (storyLine.title.isBlank()) return ""
+
         return """
-            Context title: ${_currentStoryLine.title} 
-            Context description: ${_currentStoryLine.description}
+            Context title: ${storyLine.title} 
+            Context description: ${storyLine.description}
         """.trimIndent()
     }
 
@@ -66,7 +64,6 @@ internal class GameViewModel(
         plot: String
     ) {
         _uiDataState.value = UIDataState.Loading
-        lastUsedTransitRulesJson = transitRulesJson ?: lastUsedTransitRulesJson
 
         val language = if (gameSetup.isEnglish) GameLanguage.ENGLISH else GameLanguage.FRENCH
         val isCustom = gameSetup.isCustomSimulation
@@ -80,15 +77,15 @@ internal class GameViewModel(
                 )
 
                 result.onSuccess { wrapper ->
-                    _scenariosState.value = wrapper.scenarios
-                    _currentStoryLine = wrapper.storyLine
+                    gameSessionRepository.setNewSession(wrapper.storyLine, wrapper.scenarios)
                     _uiDataState.value = UIDataState.Success.ScenariosGenerated
                 }.onFailure {
-                    _scenariosState.value = emptyList()
+                    gameSessionRepository.clearSession()
                     _uiDataState.value = UIDataState.Error.AIError
                 }
             } else {
-                _scenariosState.value = defaultScenariosProvider.getDefaultScenarios(!gameSetup.isEnglish)
+                val defaultScenarios = defaultScenariosProvider.getDefaultScenarios(!gameSetup.isEnglish)
+                gameSessionRepository.setNewSession(StoryLine.EMPTY, defaultScenarios)
                 _uiDataState.value = UIDataState.Success.ScenariosGenerated
             }
         }
@@ -96,26 +93,12 @@ internal class GameViewModel(
 
     fun startGame() {
         clearUIState()
-        _currentScenario.value = null
-        _scenarioProgress.value = 0f
+        gameSessionRepository.clearCurrentScenario()
         nextScenario()
     }
 
     fun nextScenario(): Boolean {
-        val currentIndex = _currentScenario.value?.currentIndexInGame ?: -1
-        val nextIndex = currentIndex + 1
-
-        val nextScenario = _scenariosState.value.getOrNull(nextIndex)?.copy(
-            currentIndexInGame = nextIndex
-        )
-
-        return if (nextScenario != null) {
-            _currentScenario.value = nextScenario
-            _scenarioProgress.value = (nextIndex.toFloat() + 1) / _scenariosState.value.size
-            true
-        } else {
-            false
-        }
+        return gameSessionRepository.nextScenario()
     }
 
     fun calculateGameFinalGrade(
@@ -127,15 +110,9 @@ internal class GameViewModel(
     }
 
     fun saveCurrentStoryLine() {
-        if (_currentStoryLine != StoryLine.EMPTY && _scenariosState.value.isNotEmpty()) {
-            storyRepository.saveStoryLine(_currentStoryLine, _scenariosState.value)
-        }
-    }
-
-    fun loadStory(storyId: Long) {
-        val scenarios = storyRepository.loadScenariosForStory(storyId)
-        if (scenarios.isNotEmpty()) {
-            _scenariosState.value = scenarios
+        val scenarios = gameSessionRepository.scenarios
+        if (storyLine != StoryLine.EMPTY && scenarios.isNotEmpty()) {
+            storyRepository.saveStoryLine(storyLine, scenarios)
         }
     }
 }

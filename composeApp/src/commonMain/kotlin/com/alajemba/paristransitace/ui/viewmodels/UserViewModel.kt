@@ -9,6 +9,9 @@ import com.alajemba.paristransitace.domain.model.SimulationType
 import com.alajemba.paristransitace.domain.model.UserStats
 import com.alajemba.paristransitace.domain.repository.SettingsRepository
 import com.alajemba.paristransitace.domain.usecase.app.ClearAppStateUseCase
+import com.alajemba.paristransitace.ui.navigation.GameRoute
+import com.alajemba.paristransitace.ui.navigation.HomeRoute
+import com.alajemba.paristransitace.ui.navigation.LandingRoute
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -24,9 +27,8 @@ internal class UserViewModel(
     private val _gameSetupState = MutableStateFlow(GameSetup.EMPTY)
     val gameSetupState = _gameSetupState.asStateFlow()
 
-    private val _hasSeenLandingScreen = MutableStateFlow<Boolean?>(null)
-    val hasSeenLandingScreen = _hasSeenLandingScreen.asStateFlow()
-
+    private val _lastSessionCheckpoint = MutableStateFlow<String?>(null)
+    val lastSessionCheckpoint = _lastSessionCheckpoint.asStateFlow()
 
     var gameSetupPlot = ""
         private set
@@ -37,7 +39,7 @@ internal class UserViewModel(
 
     private fun loadSavedSettings() {
         viewModelScope.launch {
-            _hasSeenLandingScreen.value = settingsRepository.getInitialLoad()
+            _lastSessionCheckpoint.value = settingsRepository.lastSessionCheckpoint()
         }
 
         viewModelScope.launch {
@@ -161,11 +163,25 @@ internal class UserViewModel(
     }
 
     fun setHasSeenLandingScreen() {
-        settingsRepository.saveInitialLoad()
-        _hasSeenLandingScreen.value = true
+        settingsRepository.saveSessionCheckpoint(LandingRoute.label)
+        _lastSessionCheckpoint.value = LandingRoute.label
+    }
+
+    fun wasOnHomeScreen() {
+        settingsRepository.saveSessionCheckpoint(HomeRoute.label)
+        _lastSessionCheckpoint.value = HomeRoute.label
+    }
+
+    fun wasOnGameScreen() {
+        settingsRepository.saveSessionCheckpoint(GameRoute.label)
+        _lastSessionCheckpoint.value = GameRoute.label
     }
 
     fun setDeviceLanguage(language: GameLanguage) {
         _gameSetupState.value = _gameSetupState.value.copy(deviceLanguage = language)
+    }
+
+    fun setLastSessionCheckpoint() {
+        TODO("Not yet implemented")
     }
 }

@@ -72,6 +72,8 @@ class LocalDataSource(private val database: ParisTransitDatabase) {
     // Stories
     fun getAllStories() = queries.selectAllStories().executeAsList()
 
+    fun getStoryById(storyId: Long) = queries.getStoryById(storyId).executeAsOneOrNull()
+
     fun insertStory(
         title: String,
         description: String,
