@@ -27,6 +27,7 @@ fun AppDialog(
     titleLabel: String,
     confirmLabel: String,
     dismissLabel: String,
+    confirmBgColor: Color
 ) {
     // We start visible = false and set it to true immediately to trigger the "Enter" animation
     var isVisible by remember { mutableStateOf(false) }
@@ -83,15 +84,15 @@ fun AppDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = VoidBlack),
                 shape = RectangleShape
             ) {
-                Text(confirmLabel, color = MaterialTheme.colorScheme.onBackground)
+                Text(dismissLabel, color = MaterialTheme.colorScheme.onBackground)
             }
 
             Button(
                 onClick = onConfirm,
-                colors = ButtonDefaults.buttonColors(containerColor = CrimsonRed),
+                colors = ButtonDefaults.buttonColors(containerColor = confirmBgColor),
                 shape = RectangleShape
             ) {
-                Text(dismissLabel, color = MaterialTheme.colorScheme.onBackground)
+                Text(confirmLabel, color = MaterialTheme.colorScheme.onBackground)
             }
         }
     }

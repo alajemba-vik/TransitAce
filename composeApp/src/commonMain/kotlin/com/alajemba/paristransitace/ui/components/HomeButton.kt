@@ -13,6 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.alajemba.paristransitace.ui.theme.CrimsonRed
 import com.alajemba.paristransitace.ui.theme.RetroAmber
 import org.jetbrains.compose.resources.stringResource
 import paristransitace.composeapp.generated.resources.Res
@@ -58,8 +59,9 @@ fun HomeButton(
                 },
                 onDismiss = { showOnHomeClickDialog = false },
                 titleLabel = stringResource(Res.string.ai_says),
-                confirmLabel = stringResource(Res.string.stay),
-                dismissLabel = stringResource(Res.string.leave)
+                confirmLabel = stringResource(Res.string.leave),
+                dismissLabel = stringResource(Res.string.stay),
+                confirmBgColor = CrimsonRed
             )
         }
     }
