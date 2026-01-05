@@ -27,8 +27,7 @@ import paristransitace.composeapp.generated.resources.comms
 
 @Composable
 fun StatsBar(
-    userStats: UserStats,
-    showUnknownState: Boolean = false,
+    userStats: UserStats?,
     isCommsEnabled: Boolean = true,
     onCommsClicked: () -> Unit,
     modifier: Modifier = Modifier
@@ -43,19 +42,19 @@ fun StatsBar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                if (showUnknownState) "-" else userStats.budget.toEuroString(),
+                userStats?.budget?.toEuroString() ?: "-",
                 color = RetroAmber,
                 style = MaterialTheme.typography.labelMedium
             )
             Divider()
             Text(
-                if (showUnknownState) "-" else (userStats.morale.toString() + "%"),
+                if (userStats == null) "-" else (userStats.morale.toString() + "%"),
                 color = RetroAmber,
                 style = MaterialTheme.typography.labelMedium
             )
             Divider()
             Text(
-                userStats.legalInfractionsCount.toString(),
+                userStats?.legalInfractionsCount?.toString() ?: "",
                 color = RetroAmber,
                 style = MaterialTheme.typography.labelMedium
             )
@@ -64,7 +63,7 @@ fun StatsBar(
 
             HeaderTab(
                 stringResource(Res.string.comms).uppercase(),
-                active = isCommsEnabled && !showUnknownState,
+                active = isCommsEnabled && userStats != null,
                 onClick = onCommsClicked
             )
         }

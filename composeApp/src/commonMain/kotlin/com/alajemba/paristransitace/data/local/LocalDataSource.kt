@@ -1,10 +1,13 @@
 package com.alajemba.paristransitace.data.local
 
 import ai.koog.utils.io.SuitableForIO
+import app.cash.sqldelight.Query
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
 import app.cash.sqldelight.coroutines.mapToOneOrNull
+import app.cash.sqldelight.db.QueryResult
 import com.alajemba.paristransitace.db.ParisTransitDatabase
+import com.alajemba.paristransitace.db.SavedGameState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
@@ -133,7 +136,29 @@ class LocalDataSource(private val database: ParisTransitDatabase) {
         queries.deleteScenariosForStory(storyId)
     }
 
+    // Saved Game State
+    fun saveGameState(
+        storyId: Long?,
+        currentScenarioIndex: Int,
+        budget: Double,
+        morale: Int,
+        legalInfractionsCount: Int
+    ) {
+        queries.insertOrUpdateSavedGame(
+            storyId = storyId,
+            currentScenarioIndex = currentScenarioIndex.toLong(),
+            budget = budget,
+            morale = morale.toLong(),
+            legalInfractionsCount = legalInfractionsCount.toLong(),
+            timestamp = Clock.System.now().toEpochMilliseconds()
+        )
+    }
 
+    fun getSavedGame(): SavedGameState? = queries.getSavedGame().executeAsOneOrNull()
+
+    fun deleteSavedGame(): QueryResult<Long> = queries.deleteSavedGame()
+
+    fun hasSavedGame(): Boolean = queries.hasSavedGame().executeAsOne() > 0
 
     fun runInTransaction(block: () -> Unit) {
         database.transaction { block() }

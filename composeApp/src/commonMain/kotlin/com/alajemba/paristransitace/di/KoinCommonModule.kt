@@ -42,6 +42,8 @@ val commonModule = module {
 
     single<RemoteDataSource> { LLMRemoteDataSource(get(), get()) }
 
+    single<UserRepository> { UserRepositoryImpl(get()) }
+
     single<ChatRepository> { ChatRepositoryImpl(get()) }
 
     single<ChatAIRepository> { ChatAIRepositoryImpl(get()) }
@@ -51,11 +53,11 @@ val commonModule = module {
     single<StoryRepository> { StoryRepositoryImpl(get(), get()) }
 
     // Game Session - single source of truth for current game state
-    single<GameSessionRepository> { GameSessionRepositoryImpl(get()) }
+    single<GameSessionRepository> { GameSessionRepositoryImpl(get(), get()) }
 
     // Use Cases
     // General Use Cases
-    factory { ClearAppStateUseCase(get(), get(), get()) }
+    factory { ClearAppStateUseCase(get(), get(), get(), get()) }
 
     // Chat Use Cases
     factory { InsertChatMessageUseCase(get()) }

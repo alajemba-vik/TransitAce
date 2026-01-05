@@ -31,6 +31,7 @@ import com.alajemba.paristransitace.ui.viewmodels.GameViewModel
 import com.alajemba.paristransitace.ui.viewmodels.UserViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import paristransitace.composeapp.generated.resources.*
 
@@ -48,13 +49,16 @@ internal fun GameScreen(
     }
 
     val currentScenarioState by gameViewModel.currentScenario.collectAsStateWithLifecycle()
-    val userStatsState by userViewModel.userStatsState.collectAsStateWithLifecycle()
+    val userStatsState by gameViewModel.userStatsState.collectAsStateWithLifecycle()
     val scenarioProgressState by gameViewModel.scenarioProgress.collectAsStateWithLifecycle(0f)
 
-    var showComms by remember { mutableStateOf(false) }
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scaffoldState = rememberBottomSheetScaffoldState(
+        bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    )
+    val coroutineScope = rememberCoroutineScope()
 
-    Scaffold(
+    BottomSheetScaffold(
+        scaffoldState = scaffoldState,
         topBar = {
             ScreenHeader(
                 scenarioTitle = "${stringResource(Res.string.scenario).uppercase()} ${currentScenarioState?.id}",
@@ -63,9 +67,48 @@ internal fun GameScreen(
                 goHome = onNavigateHome,
             )
         },
+        sheetPeekHeight = 0.dp,
+        sheetShape = RectangleShape,
+        sheetContentColor = Color(0xFFEBDBB2),
+        sheetContainerColor = VoidBlack,
+        sheetDragHandle = {
+            Box(
+                modifier = Modifier
+                    .padding(top = 8.dp)
+                    .width(40.dp)
+                    .height(4.dp)
+                    .background(Color(0xFFD79921), RoundedCornerShape(2.dp))
+            )
+        },
+        sheetTonalElevation = 0.dp,
         modifier = Modifier.fillMaxSize()
             .statusBarsPadding()
-            .safeDrawingPadding()
+            .safeDrawingPadding(),
+        sheetContent = {
+            Column(modifier = Modifier.fillMaxHeight(0.7f)) {
+
+                Text(
+                    text = stringResource(Res.string.secure_uplink_established),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.Green,
+                    modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp)
+                )
+
+                AIChatWindow(
+                    chatMessages = chatViewModel.chatMessages.collectAsState().value,
+                    onSend = { msg -> chatViewModel.sendInGameMessage(
+                        msg,
+                        userViewModel.gameSetupState.value,
+                        gameContext = gameViewModel.getGameContext()
+                    ) },
+                    isNewMessageEnabled = true,
+                    modifier = Modifier.padding(bottom = 16.dp),
+                    onChatMessageAction = {_,_ -> },
+                    bgColor = VoidBlack,
+                    isInActiveGame = true
+                )
+            }
+        }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -82,7 +125,13 @@ internal fun GameScreen(
                 StatsBar(
                     userStatsState,
                     onCommsClicked = {
-                        showComms = true
+                        coroutineScope.launch {
+                            if (scaffoldState.bottomSheetState.isVisible) {
+                                scaffoldState.bottomSheetState.hide()
+                            } else {
+                                scaffoldState.bottomSheetState.expand()
+                            }
+                        }
                     }
                 )
 
@@ -93,20 +142,18 @@ internal fun GameScreen(
                         ScreenContent(
                             currentScenarioState,
                             onOptionSelected = { option ->
-                                userViewModel.updateStats(
+                                gameViewModel.updateStats(
                                     budgetImpact = option.budgetImpact,
                                     moraleImpact = option.moraleImpact,
                                     increaseLegalInfractionsBy = option.increaseLegalInfractionsBy
                                 )
                             },
                             loadNextScenario = {
+                                gameViewModel.saveGameState(userStatsState)
+
                                 if (!gameViewModel.nextScenario()) {
                                     isGameOver = true
-                                    gameViewModel.calculateGameFinalGrade(
-                                        budgetRemaining = userStatsState.budget,
-                                        moraleRemaining = userStatsState.morale,
-                                        legalInfractionsCount = userStatsState.legalInfractionsCount
-                                    )
+                                    gameViewModel.onGameOver(userStatsState)
                                 }
                             }
                         )
@@ -123,8 +170,7 @@ internal fun GameScreen(
                                 reason = gameViewModel.gameReport.value.summary,
                                 onRestart = {
                                     isGameOver = false
-                                    userViewModel.resetUserStats()
-                                    gameViewModel.startGame()
+                                    gameViewModel.onRestart()
                                 }
                             )
                         }
@@ -132,52 +178,6 @@ internal fun GameScreen(
                 }
             }
         }
-
-        if (showComms) {
-            val bgColor = VoidBlack
-            ModalBottomSheet(
-                onDismissRequest = { showComms = false },
-                sheetState = sheetState,
-                containerColor = bgColor,
-                contentColor = Color(0xFFEBDBB2),
-                tonalElevation = 0.dp,
-                shape = RectangleShape,
-                dragHandle = {
-                    Box(
-                        modifier = Modifier
-                            .padding(top = 8.dp)
-                            .width(40.dp)
-                            .height(4.dp)
-                            .background(Color(0xFFD79921), RoundedCornerShape(2.dp))
-                    )
-                }
-            ) {
-                Column(modifier = Modifier.fillMaxHeight(0.7f)) {
-
-                    Text(
-                        text = stringResource(Res.string.secure_uplink_established),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.Green,
-                        modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp)
-                    )
-
-                    AIChatWindow(
-                        chatMessages = chatViewModel.chatMessages.collectAsState().value,
-                        onSend = { msg -> chatViewModel.sendInGameMessage(
-                            msg,
-                            userViewModel.gameSetupState.value,
-                            gameContext = gameViewModel.getGameContext()
-                        ) },
-                        isNewMessageEnabled = true,
-                        modifier = Modifier.padding(bottom = 16.dp),
-                        onChatMessageAction = {_,_ -> },
-                        bgColor = bgColor,
-                        isInActiveGame = true
-                    )
-                }
-            }
-        }
-
     }
 
 }

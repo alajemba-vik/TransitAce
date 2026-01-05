@@ -1,7 +1,9 @@
 package com.alajemba.paristransitace.data.repository
 
+import com.alajemba.paristransitace.data.local.LocalDataSource
 import com.alajemba.paristransitace.domain.model.Scenario
 import com.alajemba.paristransitace.domain.model.StoryLine
+import com.alajemba.paristransitace.domain.model.UserStats
 import com.alajemba.paristransitace.domain.repository.GameSessionRepository
 import com.alajemba.paristransitace.domain.repository.StoryRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -10,11 +12,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 
 class GameSessionRepositoryImpl(
-    private val storyRepository: StoryRepository
+    private val storyRepository: StoryRepository,
+    private val localDataSource: LocalDataSource
 ) : GameSessionRepository {
 
     private var _currentStoryLine = StoryLine.EMPTY
-    override val currentStoryLine: StoryLine = _currentStoryLine
+    override val currentStoryLine: StoryLine get() = _currentStoryLine
 
     private var _scenarios: List<Scenario> = emptyList()
     override val scenarios: List<Scenario> get() = _scenarios
@@ -54,7 +57,6 @@ class GameSessionRepositoryImpl(
         val nextIndex = (currentScenario.value?.currentIndexInGame ?: -1) + 1
 
         return if (nextIndex < _scenarios.size) {
-
             _currentScenario.value = _scenarios.getOrNull(nextIndex)?.copy(currentIndexInGame = nextIndex)
             true
         } else {
@@ -71,5 +73,44 @@ class GameSessionRepositoryImpl(
         _scenarios = emptyList()
         clearCurrentScenario()
     }
-}
 
+    override fun saveGameState(userStats: UserStats) {
+        localDataSource.saveGameState(
+            storyId = _currentStoryLine.id,
+            currentScenarioIndex = _currentScenario.value?.currentIndexInGame ?: -1,
+            budget = userStats.budget,
+            morale = userStats.morale,
+            legalInfractionsCount = userStats.legalInfractionsCount
+        )
+    }
+
+    override fun loadSavedGame(): UserStats? {
+        val saved = localDataSource.getSavedGame() ?: return null
+
+        val storyId = saved.storyId
+        if (storyId != null) {
+            if (!loadStoryForSession(storyId)) return null
+        }
+
+        val targetIndex = saved.currentScenarioIndex.toInt()
+        repeat(targetIndex + 1) {
+            nextScenario()
+        }
+
+        return UserStats(
+            budget = saved.budget,
+            morale = saved.morale.toInt(),
+            legalInfractionsCount = saved.legalInfractionsCount.toInt()
+        )
+    }
+
+    override fun deleteSavedGame() {
+        localDataSource.deleteSavedGame()
+    }
+
+    override fun clearAll() {
+        deleteSavedGame()
+        clearSession()
+        clearCurrentScenario()
+    }
+}

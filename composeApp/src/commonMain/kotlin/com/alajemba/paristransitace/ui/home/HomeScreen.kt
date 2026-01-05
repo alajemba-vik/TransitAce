@@ -84,7 +84,6 @@ internal fun HomeScreen(
     }
 
     ScreenContent(
-        userStats = userViewModel.userStatsState.collectAsStateWithLifecycle().value,
         chats = chatViewModel.chatMessages.collectAsStateWithLifecycle().value,
         onSend = { message ->
             chatViewModel.attachUserNewMessage(message)
@@ -114,7 +113,6 @@ private fun ScreenContent(
     chats: List<ChatUiModel>,
     onSend: (String) -> Unit,
     isNewMessageEnabled: Boolean = true,
-    userStats: UserStats,
     onAction: (ChatMessageAction, ChatUiModel) -> Unit,
     onBack: (() -> Unit)?,
     showFooter: Boolean = true
@@ -133,8 +131,7 @@ private fun ScreenContent(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = VoidBlack),
                 title = {
                     StatsBar(
-                        userStats = userStats,
-                        showUnknownState = true,
+                        userStats = null,
                         isCommsEnabled = false,
                         onCommsClicked = {},
                         modifier = Modifier.padding(end = Dimens.Space.medium, start = Dimens.Space.tiny)

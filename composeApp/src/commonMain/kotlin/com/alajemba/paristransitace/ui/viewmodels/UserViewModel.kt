@@ -7,7 +7,9 @@ import com.alajemba.paristransitace.domain.model.GameSetup
 import com.alajemba.paristransitace.domain.model.ScenarioGenerationStatus
 import com.alajemba.paristransitace.domain.model.SimulationType
 import com.alajemba.paristransitace.domain.model.UserStats
+import com.alajemba.paristransitace.domain.repository.GameSessionRepository
 import com.alajemba.paristransitace.domain.repository.SettingsRepository
+import com.alajemba.paristransitace.domain.repository.UserRepository
 import com.alajemba.paristransitace.domain.usecase.app.ClearAppStateUseCase
 import com.alajemba.paristransitace.ui.navigation.GameRoute
 import com.alajemba.paristransitace.ui.navigation.HomeRoute
@@ -18,12 +20,9 @@ import kotlinx.coroutines.launch
 
 internal class UserViewModel(
     private val settingsRepository: SettingsRepository,
-    private val clearAppStateUseCase: ClearAppStateUseCase
+    private val clearAppStateUseCase: ClearAppStateUseCase,
+    private val userRepository: UserRepository
 ) : ViewModel() {
-
-    private val _userStatsState = MutableStateFlow(UserStats())
-    val userStatsState = _userStatsState.asStateFlow()
-
     private val _gameSetupState = MutableStateFlow(GameSetup.EMPTY)
     val gameSetupState = _gameSetupState.asStateFlow()
 
@@ -39,7 +38,13 @@ internal class UserViewModel(
 
     private fun loadSavedSettings() {
         viewModelScope.launch {
-            _lastSessionCheckpoint.value = settingsRepository.lastSessionCheckpoint()
+            var savedValue = settingsRepository.lastSessionCheckpoint()
+            if (savedValue == GameRoute.label) {
+                if (!userRepository.hasSavedGame()) {
+                    savedValue = null
+                }
+            }
+            _lastSessionCheckpoint.value = if (savedValue.isNullOrBlank()) LandingRoute.label else savedValue
         }
 
         viewModelScope.launch {
@@ -144,21 +149,8 @@ internal class UserViewModel(
         _gameSetupState.value = _gameSetupState.value.copy(scenariosGenerationStatus = status)
     }
 
-    fun updateStats(budgetImpact: Double, moraleImpact: Int, increaseLegalInfractionsBy: Int) {
-        _userStatsState.value = _userStatsState.value.copy(
-            budget = _userStatsState.value.budget + budgetImpact,
-            morale = _userStatsState.value.morale + moraleImpact,
-            legalInfractionsCount = _userStatsState.value.legalInfractionsCount + increaseLegalInfractionsBy
-        )
-    }
-
-    fun resetUserStats() {
-        _userStatsState.value = UserStats()
-    }
-
     fun clearAllInfo() {
         clearAppStateUseCase()
-        resetUserStats()
         _gameSetupState.value = GameSetup.EMPTY
     }
 
@@ -179,9 +171,5 @@ internal class UserViewModel(
 
     fun setDeviceLanguage(language: GameLanguage) {
         _gameSetupState.value = _gameSetupState.value.copy(deviceLanguage = language)
-    }
-
-    fun setLastSessionCheckpoint() {
-        TODO("Not yet implemented")
     }
 }

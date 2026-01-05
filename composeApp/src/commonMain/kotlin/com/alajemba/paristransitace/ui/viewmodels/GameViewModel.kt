@@ -8,6 +8,7 @@ import com.alajemba.paristransitace.domain.model.GameReport
 import com.alajemba.paristransitace.domain.model.GameSetup
 import com.alajemba.paristransitace.domain.model.Scenario
 import com.alajemba.paristransitace.domain.model.StoryLine
+import com.alajemba.paristransitace.domain.model.UserStats
 import com.alajemba.paristransitace.domain.repository.GameSessionRepository
 import com.alajemba.paristransitace.domain.repository.StoryRepository
 import com.alajemba.paristransitace.domain.usecase.game.CalculateFinalGradeUseCase
@@ -27,6 +28,9 @@ internal class GameViewModel(
     private val gameSessionRepository: GameSessionRepository
 ) : ViewModel() {
 
+    private val _userStatsState = MutableStateFlow(UserStats())
+    val userStatsState = _userStatsState.asStateFlow()
+
     private val _uiDataState = MutableStateFlow<UIDataState>(UIDataState.Loading)
     val gameDataState = _uiDataState.asStateFlow()
 
@@ -45,6 +49,26 @@ internal class GameViewModel(
     private val _gameReport = MutableStateFlow(GameReport.EMPTY)
     val gameReport = _gameReport.asStateFlow()
 
+    init {
+        viewModelScope.launch {
+            gameSessionRepository.loadSavedGame()?.let { savedStats ->
+                _userStatsState.value = savedStats
+            }
+        }
+    }
+
+    fun updateStats(budgetImpact: Double, moraleImpact: Int, increaseLegalInfractionsBy: Int) {
+        _userStatsState.value = _userStatsState.value.copy(
+            budget = _userStatsState.value.budget + budgetImpact,
+            morale = _userStatsState.value.morale + moraleImpact,
+            legalInfractionsCount = _userStatsState.value.legalInfractionsCount + increaseLegalInfractionsBy
+        )
+    }
+
+    fun resetUserStats() {
+        _userStatsState.value = UserStats()
+    }
+
     fun getGameContext(): String {
         if (storyLine.title.isBlank()) return ""
 
@@ -55,6 +79,7 @@ internal class GameViewModel(
     }
 
     fun clearUIState() {
+        resetUserStats()
         _uiDataState.value = UIDataState.Idle
     }
 
@@ -114,5 +139,27 @@ internal class GameViewModel(
         if (storyLine != StoryLine.EMPTY && scenarios.isNotEmpty()) {
             storyRepository.saveStoryLine(storyLine, scenarios)
         }
+    }
+
+    fun saveGameState(userStats: UserStats) {
+        gameSessionRepository.saveGameState(userStats)
+    }
+
+    fun deleteSavedGame() {
+        gameSessionRepository.deleteSavedGame()
+    }
+
+    fun onGameOver(userStatsState: UserStats) {
+        calculateGameFinalGrade(
+            budgetRemaining = userStatsState.budget,
+            moraleRemaining = userStatsState.morale,
+            legalInfractionsCount = userStatsState.legalInfractionsCount
+        )
+        deleteSavedGame()
+    }
+
+    fun onRestart() {
+        resetUserStats()
+        startGame()
     }
 }

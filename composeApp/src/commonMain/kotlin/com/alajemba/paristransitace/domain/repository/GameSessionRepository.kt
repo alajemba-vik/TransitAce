@@ -2,6 +2,7 @@ package com.alajemba.paristransitace.domain.repository
 
 import com.alajemba.paristransitace.domain.model.Scenario
 import com.alajemba.paristransitace.domain.model.StoryLine
+import com.alajemba.paristransitace.domain.model.UserStats
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -23,11 +24,17 @@ interface GameSessionRepository {
 
     fun loadStoryForSession(storyId: Long): Boolean
 
-
     fun nextScenario(): Boolean
 
     fun clearCurrentScenario()
 
     fun clearSession()
 
+    fun saveGameState(userStats: UserStats)
+
+    fun loadSavedGame(): UserStats?
+
+    fun deleteSavedGame()
+
+    fun clearAll()
 }
