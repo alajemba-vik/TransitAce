@@ -58,12 +58,15 @@ class StoryRepositoryImpl(
     }
 
     override fun saveStoryLine(storyLine: StoryLine, scenarios: List<Scenario>) {
+        println("Saving story with id '${storyLine.id}' with ${scenarios.size} scenarios.")
+
         localDataSource.runInTransaction {
             val storyId = localDataSource.insertStory(
                 title = storyLine.title,
                 description = storyLine.description,
                 initialBudget = storyLine.initialBudget,
-                initialMorale = storyLine.initialMorale.toLong()
+                initialMorale = storyLine.initialMorale.toLong(),
+                id = storyLine.id
             )
 
             localDataSource.deleteScenariosForStory(storyId)

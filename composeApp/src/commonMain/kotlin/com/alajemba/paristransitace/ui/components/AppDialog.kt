@@ -29,7 +29,6 @@ fun AppDialog(
     dismissLabel: String,
     confirmBgColor: Color
 ) {
-    // We start visible = false and set it to true immediately to trigger the "Enter" animation
     var isVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -55,7 +54,7 @@ fun AppDialog(
                 scaleX = scale
                 scaleY = scale
                 alpha = scale
-                // This makes it grow FROM the tail (approx bottom-left)
+                // This makes it grow from the bottom-left
                 transformOrigin = TransformOrigin(0.2f, 1f)
             }
             .background(MaterialTheme.colorScheme.secondaryContainer, shape = shape)

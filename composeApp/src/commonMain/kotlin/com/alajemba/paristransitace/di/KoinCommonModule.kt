@@ -74,7 +74,6 @@ val commonModule = module {
         ParisTransitDatabase(get<DatabaseDriverFactory>().createDriver())
     }
 
-    // ViewModels - viewModelOf handles scoping automatically
     viewModelOf(::ChatViewModel)
     viewModelOf(::UserViewModel)
     viewModelOf(::GameViewModel)

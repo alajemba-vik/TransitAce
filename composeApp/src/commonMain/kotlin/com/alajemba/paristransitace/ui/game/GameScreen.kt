@@ -44,23 +44,24 @@ internal fun GameScreen(
     onNavigateHome: () -> Unit,
 ) {
 
-    LaunchedEffect(Unit) {
-        gameViewModel.startGame()
-    }
-
     val currentScenarioState by gameViewModel.currentScenario.collectAsStateWithLifecycle()
     val userStatsState by gameViewModel.userStatsState.collectAsStateWithLifecycle()
     val scenarioProgressState by gameViewModel.scenarioProgress.collectAsStateWithLifecycle(0f)
 
     val scaffoldState = rememberBottomSheetScaffoldState(
-        bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        bottomSheetState = rememberStandardBottomSheetState(
+            initialValue = SheetValue.Hidden,
+            skipHiddenState = false
+        )
     )
     val coroutineScope = rememberCoroutineScope()
 
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
+        containerColor = VoidBlack,
         topBar = {
             ScreenHeader(
+                modifier = Modifier.statusBarsPadding(),
                 scenarioTitle = "${stringResource(Res.string.scenario).uppercase()} ${currentScenarioState?.id}",
                 progress = scenarioProgressState,
                 progressText = gameViewModel.scenarioProgressText.collectAsStateWithLifecycle("").value,
@@ -81,11 +82,13 @@ internal fun GameScreen(
             )
         },
         sheetTonalElevation = 0.dp,
-        modifier = Modifier.fillMaxSize()
-            .statusBarsPadding()
-            .safeDrawingPadding(),
+        modifier = Modifier.fillMaxSize(),
         sheetContent = {
-            Column(modifier = Modifier.fillMaxHeight(0.7f)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight(0.7f)
+                    .windowInsetsPadding(WindowInsets.navigationBars)
+            ) {
 
                 Text(
                     text = stringResource(Res.string.secure_uplink_established),
@@ -114,7 +117,7 @@ internal fun GameScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(VoidBlack)
-                .padding(padding)
+                .consumeWindowInsets(padding)
                 .padding(top = Dimens.Space.medium)
         ) {
             Column(
@@ -126,7 +129,7 @@ internal fun GameScreen(
                     userStatsState,
                     onCommsClicked = {
                         coroutineScope.launch {
-                            if (scaffoldState.bottomSheetState.isVisible) {
+                            if (scaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
                                 scaffoldState.bottomSheetState.hide()
                             } else {
                                 scaffoldState.bottomSheetState.expand()
@@ -149,8 +152,6 @@ internal fun GameScreen(
                                 )
                             },
                             loadNextScenario = {
-                                gameViewModel.saveGameState(userStatsState)
-
                                 if (!gameViewModel.nextScenario()) {
                                     isGameOver = true
                                     gameViewModel.onGameOver(userStatsState)

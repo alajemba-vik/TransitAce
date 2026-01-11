@@ -39,6 +39,7 @@ internal class UserViewModel(
     private fun loadSavedSettings() {
         viewModelScope.launch {
             var savedValue = settingsRepository.lastSessionCheckpoint()
+            println("Last session checkpoint: $savedValue")
             if (savedValue == GameRoute.label) {
                 if (!userRepository.hasSavedGame()) {
                     savedValue = null
@@ -99,7 +100,7 @@ internal class UserViewModel(
 
     private fun handleSimulationTypeStep(input: String) {
         val cleanedInput = input.trim().lowercase()
-        val isDefault = Regex("^(default|d|def)$").matches(cleanedInput)
+        val isDefault = Regex("^(défaut|default|d|def)$").matches(cleanedInput)
         val isCustom = Regex("^(custom|c|cust|personalisé|personnalise|perso)$").matches(cleanedInput)
 
         val simulationType = when {

@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
  */
 interface GameSessionRepository {
 
-    val currentStoryLine: StoryLine
+    val currentStoryLine: StoryLine?
     val scenarios: List<Scenario>
 
     val currentScenario: StateFlow<Scenario?>
@@ -30,7 +30,7 @@ interface GameSessionRepository {
 
     fun clearSession()
 
-    fun saveGameState(userStats: UserStats)
+    fun saveGameState(userStats: UserStats,currentStoryId: Long)
 
     fun loadSavedGame(): UserStats?
 

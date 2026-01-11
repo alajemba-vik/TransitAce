@@ -60,4 +60,7 @@
     <string name="restart_game">Restart this game</string>
     <string name="help">Help</string>
 
+    <string name="infractions">infractions</string>
+    <string name="budget">budget</string>
+
 </resources>

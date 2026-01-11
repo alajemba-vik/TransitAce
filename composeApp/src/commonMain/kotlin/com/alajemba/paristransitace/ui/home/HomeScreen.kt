@@ -65,6 +65,7 @@ internal fun HomeScreen(
 
                         if (gameSetupState.isSetupComplete) {
                             if (!gameSetupState.isCustomSimulation ) delay(3000L)
+                            gameViewModel.startGame()
                             onStartGame()
                         }
                     }

@@ -81,10 +81,11 @@ class LocalDataSource(private val database: ParisTransitDatabase) {
         title: String,
         description: String,
         initialBudget: Double,
-        initialMorale: Long
+        initialMorale: Long,
+        id: Long? = null
     ): Long {
         queries.insertStory(
-            id = null,
+            id = id,
             title = title,
             description = description,
             timeCreated = Clock.System.now().toEpochMilliseconds(),
@@ -138,12 +139,13 @@ class LocalDataSource(private val database: ParisTransitDatabase) {
 
     // Saved Game State
     fun saveGameState(
-        storyId: Long?,
+        storyId: Long,
         currentScenarioIndex: Int,
         budget: Double,
         morale: Int,
         legalInfractionsCount: Int
     ) {
+        println("Saving game state for story id '$storyId' at scenario index '$currentScenarioIndex'")
         queries.insertOrUpdateSavedGame(
             storyId = storyId,
             currentScenarioIndex = currentScenarioIndex.toLong(),

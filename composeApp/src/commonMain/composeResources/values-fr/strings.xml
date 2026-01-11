@@ -3,7 +3,7 @@
     <string name="disconnected">Déconnecté</string>
     <string name="connecting_ellipsis">Connexion...</string>
     <string name="map">Carte</string>
-    <string name="comms">Communications</string>
+    <string name="comms">Comms</string>
     <string name="chat_window_title">Sophia_Hotline_v2.0</string>
     <string name="ai_name">Sophia</string>
     <string name="you">Vous</string>
@@ -62,4 +62,8 @@
     <string name="load_storyline">Charge l'intrigue [name]</string>
     <string name="restart_game">Redémarrer ce jeu</string>
     <string name="help">Aide</string>
+
+    <string name="infractions">infractions</string>
+    <string name="budget">budget</string>
+
 </resources>

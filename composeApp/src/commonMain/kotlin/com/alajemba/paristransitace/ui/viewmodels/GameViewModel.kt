@@ -28,13 +28,13 @@ internal class GameViewModel(
     private val gameSessionRepository: GameSessionRepository
 ) : ViewModel() {
 
-    private val _userStatsState = MutableStateFlow(UserStats())
+    private val _userStatsState = MutableStateFlow(UserStats.EMPTY)
     val userStatsState = _userStatsState.asStateFlow()
 
     private val _uiDataState = MutableStateFlow<UIDataState>(UIDataState.Loading)
     val gameDataState = _uiDataState.asStateFlow()
 
-    val storyLine: StoryLine get() = gameSessionRepository.currentStoryLine
+    val storyLine: StoryLine? get() = gameSessionRepository.currentStoryLine
     val currentScenario: StateFlow<Scenario?> = gameSessionRepository.currentScenario
     val scenarioProgress: Flow<Float> = gameSessionRepository.scenarioProgress.stateIn(
         viewModelScope,
@@ -53,6 +53,7 @@ internal class GameViewModel(
         viewModelScope.launch {
             gameSessionRepository.loadSavedGame()?.let { savedStats ->
                 _userStatsState.value = savedStats
+                _uiDataState.value = UIDataState.Success.ScenariosGenerated
             }
         }
     }
@@ -65,22 +66,26 @@ internal class GameViewModel(
         )
     }
 
-    fun resetUserStats() {
-        _userStatsState.value = UserStats()
+    fun resetUserStats(storyLine: StoryLine) {
+        _userStatsState.value = UserStats(
+            budget = storyLine.initialBudget,
+            morale = storyLine.initialMorale,
+            legalInfractionsCount = 0
+        )
     }
 
     fun getGameContext(): String {
-        if (storyLine.title.isBlank()) return ""
+        if (storyLine?.title.isNullOrBlank()) return ""
 
         return """
-            Context title: ${storyLine.title} 
-            Context description: ${storyLine.description}
+            Context title: ${storyLine?.title} 
+            Context description: ${storyLine?.description}
         """.trimIndent()
     }
 
     fun clearUIState() {
-        resetUserStats()
         _uiDataState.value = UIDataState.Idle
+        resetUserStats(storyLine ?: return)
     }
 
     fun generateGameScenarios(
@@ -110,7 +115,8 @@ internal class GameViewModel(
                 }
             } else {
                 val defaultScenarios = defaultScenariosProvider.getDefaultScenarios(!gameSetup.isEnglish)
-                gameSessionRepository.setNewSession(StoryLine.EMPTY, defaultScenarios)
+                val storyLine = defaultScenariosProvider.getDefaultStoryLine()
+                gameSessionRepository.setNewSession(storyLine, defaultScenarios)
                 _uiDataState.value = UIDataState.Success.ScenariosGenerated
             }
         }
@@ -123,7 +129,9 @@ internal class GameViewModel(
     }
 
     fun nextScenario(): Boolean {
-        return gameSessionRepository.nextScenario()
+        return gameSessionRepository.nextScenario().also {
+            saveGameState(_userStatsState.value)
+        }
     }
 
     fun calculateGameFinalGrade(
@@ -135,14 +143,19 @@ internal class GameViewModel(
     }
 
     fun saveCurrentStoryLine() {
+        print("Saving current story line with id '${storyLine?.id}'")
         val scenarios = gameSessionRepository.scenarios
-        if (storyLine != StoryLine.EMPTY && scenarios.isNotEmpty()) {
-            storyRepository.saveStoryLine(storyLine, scenarios)
+        if (scenarios.isNotEmpty()) {
+            storyRepository.saveStoryLine(storyLine ?: return, scenarios)
         }
     }
 
     fun saveGameState(userStats: UserStats) {
-        gameSessionRepository.saveGameState(userStats)
+        saveCurrentStoryLine()
+        gameSessionRepository.saveGameState(
+            userStats,
+            storyLine?.id ?: return
+        )
     }
 
     fun deleteSavedGame() {
@@ -159,7 +172,7 @@ internal class GameViewModel(
     }
 
     fun onRestart() {
-        resetUserStats()
         startGame()
+        resetUserStats(storyLine ?: return)
     }
 }

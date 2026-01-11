@@ -1,22 +1,22 @@
 package com.alajemba.paristransitace.data.repository
 
-import com.alajemba.paristransitace.data.local.LocalDataSource
 import com.alajemba.paristransitace.domain.model.Scenario
 import com.alajemba.paristransitace.domain.model.StoryLine
 import com.alajemba.paristransitace.domain.model.UserStats
 import com.alajemba.paristransitace.domain.repository.GameSessionRepository
-import com.alajemba.paristransitace.domain.repository.StoryRepository
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
-import kotlin.collections.get
 
-class GameSessionRepositoryImpl(
-    private val storyRepository: StoryRepository,
-    private val localDataSource: LocalDataSource
-) : GameSessionRepository {
+/**
+ * Fake implementation of GameSessionRepository for testing.
+ * Mimics the behavior of GameSessionRepositoryImpl without needing real data sources.
+ */
+class FakeGameSessionRepository : GameSessionRepository {
 
+    // Internal state
     private var _currentStoryLine: StoryLine? = null
     override val currentStoryLine: StoryLine? get() = _currentStoryLine
 
@@ -26,17 +26,31 @@ class GameSessionRepositoryImpl(
     private val _currentScenario = MutableStateFlow<Scenario?>(null)
     override val currentScenario: StateFlow<Scenario?> = _currentScenario.asStateFlow()
 
-    override val scenarioProgress = _currentScenario.map { current ->
+    override val scenarioProgress: Flow<Float> = _currentScenario.map { current ->
         val total = _scenarios.size
         val nextIndex = (current?.currentIndexInGame ?: -1) + 1
         if (total == 0 || nextIndex < 0) 0f else nextIndex.toFloat() / total
     }
 
-    override val scenarioProgressText = _currentScenario.map { current ->
+    override val scenarioProgressText: Flow<String> = _currentScenario.map { current ->
         val index = current?.currentIndexInGame ?: 0
         val total = _scenarios.size
         "$index/$total"
     }
+
+    // Test configuration
+    var storyLineForLoading: StoryLine? = null
+    var scenariosForLoading: List<Scenario> = emptyList()
+    var canLoadStory: Boolean = true
+
+    // For saved game simulation
+    var savedUserStats: UserStats? = null
+    var savedStoryId: Long? = null
+    var savedScenarioIndex: Int = 0
+
+    // Track what was saved
+    var lastSavedUserStats: UserStats? = null
+    var lastSavedScenarioIndex: Int = -1
 
     override fun setNewSession(storyLine: StoryLine, scenarios: List<Scenario>) {
         _currentStoryLine = storyLine
@@ -45,12 +59,10 @@ class GameSessionRepositoryImpl(
     }
 
     override fun loadStoryForSession(storyId: Long): Boolean {
-        val scenarios = storyRepository.loadScenariosForStory(storyId)
-        if (scenarios.isEmpty()) return false
+        if (scenariosForLoading.isEmpty()) return false
+        val storyLine = storyLineForLoading ?: return false
 
-        val storyLine = storyRepository.getStory(storyId) ?: return false
-
-        setNewSession(storyLine, scenarios)
+        setNewSession(storyLine, scenariosForLoading)
         return true
     }
 
@@ -75,50 +87,47 @@ class GameSessionRepositoryImpl(
         clearCurrentScenario()
     }
 
-    override fun saveGameState(
-        userStats: UserStats,
-        currentStoryId: Long
-    ) {
+    override fun saveGameState(userStats: UserStats,currentStoryId: Long) {
+        lastSavedUserStats = userStats
+        lastSavedScenarioIndex = _currentScenario.value?.currentIndexInGame ?: -1
 
-        localDataSource.saveGameState(
-            storyId = currentStoryId,
-            currentScenarioIndex = _currentScenario.value?.currentIndexInGame ?: -1,
-            budget = userStats.budget,
-            morale = userStats.morale,
-            legalInfractionsCount = userStats.legalInfractionsCount
-        )
+        // Also update the "saved" state for load testing
+        savedUserStats = userStats
+        savedStoryId = _currentStoryLine?.id
+        savedScenarioIndex = lastSavedScenarioIndex
     }
 
     override fun loadSavedGame(): UserStats? {
-        val saved = localDataSource.getSavedGame() ?: return null
+        val stats = savedUserStats ?: return null
+        val storyId = savedStoryId
 
-        println("Loaded saved game: $saved")
+        if (storyId != null && canLoadStory) {
+            // Simulate loading story
+            storyLineForLoading?.let { _currentStoryLine = it }
+            _scenarios = scenariosForLoading
 
-        val storyId = saved.storyId
-        if (storyId != null) {
-            if (!loadStoryForSession(storyId)) return null
+            // Navigate to saved scenario
+            repeat(savedScenarioIndex + 1) {
+                nextScenario()
+            }
+        } else if (storyId != null) {
+            return null
         }
 
-        println("Fast forwarding to scenario index: ${saved.currentScenarioIndex}")
-        val targetIndex = saved.currentScenarioIndex.toInt()
-        if (targetIndex in _scenarios.indices) {
-            _currentScenario.value = _scenarios[targetIndex].copy(currentIndexInGame = targetIndex)
-        }
-
-        return UserStats(
-            budget = saved.budget,
-            morale = saved.morale.toInt(),
-            legalInfractionsCount = saved.legalInfractionsCount.toInt()
-        )
+        return stats
     }
 
     override fun deleteSavedGame() {
-        localDataSource.deleteSavedGame()
+        savedUserStats = null
+        savedStoryId = null
+        savedScenarioIndex = 0
+        lastSavedUserStats = null
+        lastSavedScenarioIndex = -1
     }
 
     override fun clearAll() {
         deleteSavedGame()
         clearSession()
-        clearCurrentScenario()
     }
 }
+

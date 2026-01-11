@@ -4,8 +4,21 @@ import com.alajemba.paristransitace.domain.model.GameInventory
 import com.alajemba.paristransitace.domain.model.Scenario
 import com.alajemba.paristransitace.domain.model.ScenarioOption
 import com.alajemba.paristransitace.domain.model.ScenarioTheme
+import com.alajemba.paristransitace.domain.model.StoryLine
+import kotlin.time.Clock
 
 class DefaultScenariosProvider {
+
+    fun getDefaultStoryLine(): StoryLine{
+        return StoryLine(
+            initialBudget = 100.0,
+            initialMorale = 30,
+            id = 1L,
+            title = "",
+            description = "",
+            timeCreated =  Clock.System.now().toEpochMilliseconds(),
+        )
+    }
 
     fun getDefaultScenarios(isFr: Boolean): List<Scenario> {
         return listOf(

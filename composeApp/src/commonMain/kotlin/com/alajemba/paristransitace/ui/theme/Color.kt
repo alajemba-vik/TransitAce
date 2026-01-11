@@ -50,7 +50,7 @@ val TerminalColors = darkColorScheme(
     // Surfaces: Cards, Dialogs, Popups
     surface = PanelBlack,
     onSurface = PaperText,
-    surfaceVariant = PanelBlack, // Useful for "Map Case" or "Inventory"
+    surfaceVariant = PanelBlack,
     onSurfaceVariant = DimGray,
 
     // Outlines: The borders of the terminal windows
@@ -69,6 +69,6 @@ object TerminalPalette {
     val ConsoleCursor = RetroAmber
     val DisabledText = DimGray
     val Separator = BorderGray
-    val AISpeech = ElectricBlue // Specific color for the AI character
-    val FineOverlay = CrimsonRed.copy(alpha = 0.2f) // Flash this when fined
+    val AISpeech = ElectricBlue
+    val FineOverlay = CrimsonRed.copy(alpha = 0.2f)
 }

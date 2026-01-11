@@ -1,5 +1,12 @@
 package com.alajemba.paristransitace.ui.navigation
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.text.intl.Locale
@@ -30,6 +37,14 @@ fun AppNavHost() {
         chatViewModel.clearUIState()
     }
 
+    LaunchedEffect(Unit) {
+        Locale.current.toLanguageTag().startsWith(GameLanguage.FRENCH.languageTag, ignoreCase = true).let { isFrench ->
+            userViewModel.setDeviceLanguage(
+                if (isFrench) GameLanguage.FRENCH else GameLanguage.ENGLISH
+            )
+        }
+    }
+
     when(val lastSessionCheckpoint = userViewModel.lastSessionCheckpoint.collectAsStateWithLifecycle().value) {
         null -> {
             // Still loading
@@ -42,6 +57,10 @@ fun AppNavHost() {
                     HomeRoute.label -> HomeRoute
                     else -> LandingRoute
                 },
+                enterTransition = { enterTransition() },
+                exitTransition = { exitTransition() },
+                popEnterTransition = { enterTransition() },
+                popExitTransition = { exitTransition() }
             ) {
                 composable<LandingRoute> {
                     LandingScreen(
@@ -58,12 +77,6 @@ fun AppNavHost() {
                     )
 
                     LaunchedEffect(Unit) {
-                        Locale.current.toLanguageTag().startsWith(GameLanguage.FRENCH.languageTag, ignoreCase = true).let { isFrench ->
-                            userViewModel.setDeviceLanguage(
-                                if (isFrench) GameLanguage.FRENCH else GameLanguage.ENGLISH
-                            )
-                        }
-
                         userViewModel.setHasSeenLandingScreen()
                     }
                 }
@@ -117,4 +130,22 @@ fun AppNavHost() {
             }
         }
     }
+}
+
+private fun enterTransition(): EnterTransition {
+    return fadeIn(
+        animationSpec = tween(durationMillis = 500, delayMillis = 300)
+    ) + scaleIn(
+        initialScale = 0.95f,
+        animationSpec = tween(durationMillis = 500, delayMillis = 300)
+    )
+}
+
+private fun exitTransition(): ExitTransition {
+    return fadeOut(
+        animationSpec = tween(durationMillis = 400)
+    ) + scaleOut(
+        targetScale = 1.02f,
+        animationSpec = tween(durationMillis = 400)
+    )
 }
