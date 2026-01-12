@@ -137,8 +137,7 @@ internal class GameViewModel(
         val stats = _userStatsState.value
 
         // Check game over conditions
-        if (stats.budget < 0 || stats.morale <= 0 || stats.legalInfractionsCount >= 3) {
-            onGameOver(stats)
+        if (stats.budget < 0 || stats.legalInfractionsCount >= 3) {
             return true // Game over
         }
 
