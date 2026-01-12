@@ -58,6 +58,10 @@ class FakeGameSessionRepository : GameSessionRepository {
         clearCurrentScenario()
     }
 
+    override fun updateCurrentStoryLineId(id: Long) {
+        _currentStoryLine = _currentStoryLine?.copy(id = id)
+    }
+
     override fun loadStoryForSession(storyId: Long): Boolean {
         if (scenariosForLoading.isEmpty()) return false
         val storyLine = storyLineForLoading ?: return false
@@ -79,6 +83,14 @@ class FakeGameSessionRepository : GameSessionRepository {
 
     override fun clearCurrentScenario() {
         _currentScenario.value = null
+    }
+
+    override fun restartCurrentStoryline() {
+        if (_scenarios.isNotEmpty()) {
+            _currentScenario.value = _scenarios.first().copy(currentIndexInGame = 0)
+        } else {
+            _currentScenario.value = null
+        }
     }
 
     override fun clearSession() {

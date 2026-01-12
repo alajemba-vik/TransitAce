@@ -56,6 +56,15 @@ SELECT * FROM StoryEntity;
 getStoryById:
 SELECT * FROM StoryEntity WHERE id = ?;
 
+getStoryByTitle:
+SELECT * FROM StoryEntity WHERE LOWER(title) = LOWER(?) LIMIT 1;
+
+countStoriesByTitlePattern:
+SELECT COUNT(*) FROM StoryEntity WHERE LOWER(title) LIKE LOWER(?) || '%';
+
+deleteStoryByTitle:
+DELETE FROM StoryEntity WHERE LOWER(title) = LOWER(?);
+
 selectAllScenariosForStory:
 SELECT * FROM ScenarioEntity
 WHERE parent_story_id = ?;

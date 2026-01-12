@@ -63,7 +63,10 @@ fun ChatInputField(
                 onValueChange = {
                     textFieldValue = it
                 },
-                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Send),
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    imeAction = ImeAction.Send,
+                    autoCorrectEnabled = false
+                ),
                 keyboardActions = KeyboardActions(onSend = {
                     if (canSend) {
                         onSend(textFieldValue)

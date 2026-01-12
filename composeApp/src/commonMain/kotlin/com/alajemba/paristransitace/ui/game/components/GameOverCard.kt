@@ -131,9 +131,6 @@ fun GameOverCard(
         modifier = Modifier
             .fillMaxSize()
             .background(VoidBlack)
-            .statusBarsPadding()
-            .safeDrawingPadding()
-            .padding(vertical = Dimens.Space.medium)
     ) {
         Spacer(modifier = Modifier.height(Dimens.Space.large))
 

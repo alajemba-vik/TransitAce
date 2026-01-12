@@ -11,6 +11,7 @@ import com.alajemba.paristransitace.domain.model.ScenarioTheme
 import com.alajemba.paristransitace.domain.model.ScenariosWrapper
 import com.alajemba.paristransitace.domain.model.StoryLine
 import com.alajemba.paristransitace.domain.repository.StoryRepository
+import com.alajemba.paristransitace.utils.debugLog
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 
@@ -47,29 +48,42 @@ class StoryRepositoryImpl(
 
     override fun getStory(storyId: Long): StoryLine ? {
         val entity = localDataSource.getStoryById(storyId) ?: return null
-        return StoryLine(
-            id = entity.id,
-            title = entity.title,
-            description = entity.description ?: "",
-            timeCreated = entity.timeCreated,
-            initialBudget = entity.initialBudget ?: .0,
-            initialMorale = entity.initialMorale?.toInt() ?: 0
-        )
+        return entity.toDomain()
     }
 
-    override fun saveStoryLine(storyLine: StoryLine, scenarios: List<Scenario>) {
-        println("Saving story with id '${storyLine.id}' with ${scenarios.size} scenarios.")
+    override fun getStoryByTitle(storyTitle: String): StoryLine? {
+        val entity = localDataSource.getStoryByTitle(storyTitle) ?: return null
+        return entity.toDomain()
+    }
+
+    override fun saveStoryLine(storyLine: StoryLine, scenarios: List<Scenario>): Long {
+        debugLog("Saving story with id '${storyLine.id}' with ${scenarios.size} scenarios.")
+
+        // Only check for duplicate titles when creating a new story (id is null)
+        val uniqueTitle = if (storyLine.id == null) {
+            val baseTitle = storyLine.title
+            val existingCount = countStoriesByTitlePattern(baseTitle)
+            if (existingCount > 0) {
+                "$baseTitle ${existingCount + 1}"
+            } else {
+                baseTitle
+            }
+        } else {
+            storyLine.title
+        }
+
+        var savedStoryId: Long = storyLine.id ?: -1L
 
         localDataSource.runInTransaction {
-            val storyId = localDataSource.insertStory(
-                title = storyLine.title,
+            savedStoryId = localDataSource.insertStory(
+                title = uniqueTitle,
                 description = storyLine.description,
                 initialBudget = storyLine.initialBudget,
                 initialMorale = storyLine.initialMorale.toLong(),
                 id = storyLine.id
             )
 
-            localDataSource.deleteScenariosForStory(storyId)
+            localDataSource.deleteScenariosForStory(savedStoryId)
 
             scenarios.forEach { scenario ->
                 val optionsJson = json.encodeToString(
@@ -86,10 +100,12 @@ class StoryRepositoryImpl(
                     nextScenarioId = scenario.nextScenarioId,
                     currentIndexInGame = scenario.currentIndexInGame.toLong(),
                     scenarioTheme = scenario.scenarioTheme.name,
-                    parentStoryId = storyId
+                    parentStoryId = savedStoryId
                 )
             }
         }
+
+        return savedStoryId
     }
 
     override fun loadScenariosForStory(storyId: Long): List<Scenario> {
@@ -117,6 +133,16 @@ class StoryRepositoryImpl(
             localDataSource.deleteScenariosForStory(storyId)
             localDataSource.deleteStory(storyId)
         }
+    }
+
+    override fun deleteStoryByTitle(title: String): Boolean {
+        val story = localDataSource.getStoryByTitle(title) ?: return false
+        deleteStory(story.id)
+        return true
+    }
+
+    override fun countStoriesByTitlePattern(title: String): Long {
+        return localDataSource.countStoriesByTitlePattern(title)
     }
 
     override fun clearAllStoriesAndScenarios() {

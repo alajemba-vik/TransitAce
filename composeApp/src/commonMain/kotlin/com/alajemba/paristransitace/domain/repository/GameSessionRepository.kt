@@ -22,11 +22,15 @@ interface GameSessionRepository {
 
     fun setNewSession(storyLine: StoryLine, scenarios: List<Scenario>)
 
+    fun updateCurrentStoryLineId(id: Long)
+
     fun loadStoryForSession(storyId: Long): Boolean
 
     fun nextScenario(): Boolean
 
     fun clearCurrentScenario()
+
+    fun restartCurrentStoryline()
 
     fun clearSession()
 

@@ -12,7 +12,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alajemba.paristransitace.domain.model.ScenarioGenerationStatus
-import com.alajemba.paristransitace.domain.model.UserStats
 import com.alajemba.paristransitace.ui.chat.AIChatWindow
 import com.alajemba.paristransitace.ui.components.HomeButton
 import com.alajemba.paristransitace.ui.components.StatsBar
@@ -24,6 +23,7 @@ import com.alajemba.paristransitace.ui.theme.VoidBlack
 import com.alajemba.paristransitace.ui.viewmodels.ChatViewModel
 import com.alajemba.paristransitace.ui.viewmodels.GameViewModel
 import com.alajemba.paristransitace.ui.viewmodels.UserViewModel
+import com.alajemba.paristransitace.utils.debugLog
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import paristransitace.composeapp.generated.resources.Res
@@ -39,6 +39,23 @@ internal fun HomeScreen(
     val gameSetupState by userViewModel.gameSetupState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
+        launch {
+            chatViewModel.uiDataState.collect { chatDataValue ->
+                when (chatDataValue) {
+                    is UIDataState.Success.StorylineLoaded -> {
+                        debugLog("Storyline loaded successfully")
+                        delay(3000L)
+                        userViewModel.setupGame(scenariosGenerationStatus = ScenarioGenerationStatus.SCENARIOS_GENERATED_ACTION)
+                        gameViewModel.startGame()
+                        onStartGame()
+                    }
+
+                    else -> {}
+
+                }
+            }
+        }
+
         launch {
             userViewModel.gameSetupState.collect { gameSetupState ->
                 when {
@@ -60,10 +77,13 @@ internal fun HomeScreen(
                             gameSetupState.isOnScenariosGenerationFailureStep || gameSetupState.isSetupComplete -> {
                         chatViewModel.setupGame(
                             gameSetupState,
-                            gameViewModel.storyLine
+                            gameViewModel.storyLine,
+                            isEnglish = gameSetupState.isEnglish
                         )
 
                         if (gameSetupState.isSetupComplete) {
+                            debugLog("Starting game now...")
+
                             if (!gameSetupState.isCustomSimulation ) delay(3000L)
                             gameViewModel.startGame()
                             onStartGame()
@@ -75,10 +95,18 @@ internal fun HomeScreen(
 
         launch {
             gameViewModel.gameDataState.collect { gameDataValue ->
-                if (gameDataValue is UIDataState.Success.ScenariosGenerated) {
-                    userViewModel.setupGame(scenariosGenerationStatus = ScenarioGenerationStatus.SUCCESS)
-                } else if (gameDataValue is UIDataState.Error) {
-                    userViewModel.setupGame(scenariosGenerationStatus = ScenarioGenerationStatus.FAILURE)
+                when (gameDataValue) {
+                    is UIDataState.Success.ScenariosGenerated -> {
+                        userViewModel.setupGame(scenariosGenerationStatus = ScenarioGenerationStatus.SUCCESS)
+                    }
+
+                    is UIDataState.Error -> {
+                        if (gameDataValue is UIDataState.Error.AIError) {
+                            chatViewModel.attachSystemMessage(gameDataValue.message)
+                        }
+                        userViewModel.setupGame(scenariosGenerationStatus = ScenarioGenerationStatus.FAILURE)
+                    }
+                    else -> {}
                 }
             }
         }
@@ -88,7 +116,24 @@ internal fun HomeScreen(
         chats = chatViewModel.chatMessages.collectAsStateWithLifecycle().value,
         onSend = { message ->
             chatViewModel.attachUserNewMessage(message)
-            chatViewModel.setupGame(userViewModel.setupGame(message), gameViewModel.storyLine)
+
+            // Check if it's a help/command before processing as setup
+            if (chatViewModel.isFunctionToolCommand(message)) {
+                chatViewModel.sendInGameMessage(
+                    message = message,
+                    isEnglish = gameSetupState.isEnglish
+                )
+            } else {
+
+                val newSetup = userViewModel.setupGame(message)
+
+                chatViewModel.setupGame(
+                    newSetup,
+                    gameViewModel.storyLine,
+                    message,
+                    isEnglish = newSetup?.isEnglish ?: gameSetupState.isEnglish
+                )
+            }
         },
         showFooter = gameSetupState.isOnLanguageStep,
         onBack = goBack,
@@ -153,4 +198,3 @@ private fun ScreenContent(
 
     }
 }
-

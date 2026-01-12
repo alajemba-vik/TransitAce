@@ -14,6 +14,7 @@ import com.alajemba.paristransitace.domain.usecase.app.ClearAppStateUseCase
 import com.alajemba.paristransitace.ui.navigation.GameRoute
 import com.alajemba.paristransitace.ui.navigation.HomeRoute
 import com.alajemba.paristransitace.ui.navigation.LandingRoute
+import com.alajemba.paristransitace.utils.debugLog
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -39,9 +40,10 @@ internal class UserViewModel(
     private fun loadSavedSettings() {
         viewModelScope.launch {
             var savedValue = settingsRepository.lastSessionCheckpoint()
-            println("Last session checkpoint: $savedValue")
+            debugLog("Last session checkpoint: $savedValue")
             if (savedValue == GameRoute.label) {
                 if (!userRepository.hasSavedGame()) {
+                    debugLog("No saved game found.")
                     savedValue = null
                 }
             }
@@ -64,10 +66,13 @@ internal class UserViewModel(
         }
     }
 
+    /**
+     * @return Updated [GameSetup] if a step was processed, null otherwise.
+     */
     fun setupGame(
         input: String = "",
         scenariosGenerationStatus: ScenarioGenerationStatus = ScenarioGenerationStatus.NOT_STARTED
-    ): GameSetup {
+    ): GameSetup? {
         when {
             _gameSetupState.value.isOnLanguageStep -> handleLanguageStep(input)
             _gameSetupState.value.isOnNameStep -> handleNameStep(input)
@@ -76,6 +81,7 @@ internal class UserViewModel(
             _gameSetupState.value.isOnScenariosGenRequirementsStep -> handleScenariosRequirementsStep(input)
             _gameSetupState.value.isOnScenariosGenerationFailureStep -> handleFailureStep(input)
             _gameSetupState.value.isOnScenariosGenerationSuccessStep -> handleSuccessStep(scenariosGenerationStatus)
+            else -> return null
         }
 
         return _gameSetupState.value

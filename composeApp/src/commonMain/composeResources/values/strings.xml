@@ -56,7 +56,7 @@
     <string name="secure_uplink_established">// SECURE UPLINK ESTABLISHED</string>
 
     <string name="show_all_storylines">Show me all storylines</string>
-    <string name="load_storyline">Load [name] storyline</string>
+    <string name="load_storyline">Load [name / ID] storyline</string>
     <string name="restart_game">Restart this game</string>
     <string name="help">Help</string>
 

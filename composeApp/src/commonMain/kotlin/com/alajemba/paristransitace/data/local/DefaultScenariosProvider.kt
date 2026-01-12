@@ -9,12 +9,16 @@ import kotlin.time.Clock
 
 class DefaultScenariosProvider {
 
+    companion object {
+        const val DEFAULT_ID = 0L
+    }
+
     fun getDefaultStoryLine(): StoryLine{
         return StoryLine(
             initialBudget = 100.0,
             initialMorale = 30,
-            id = 1L,
-            title = "",
+            id = DEFAULT_ID,
+            title = "Paris Transit Adventure",
             description = "",
             timeCreated =  Clock.System.now().toEpochMilliseconds(),
         )

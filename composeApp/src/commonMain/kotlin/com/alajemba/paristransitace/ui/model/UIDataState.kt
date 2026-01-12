@@ -6,12 +6,16 @@ sealed class UIDataState {
     sealed class Success : UIDataState() {
         object ScenariosGenerated: Success()
 
+        object StorylineLoaded: Success()
+
         companion object: Success()
     }
 
-    sealed class Error : UIDataState() {
+    sealed class Error: UIDataState() {
         data object NetworkError : Error()
-        data object AIError : Error()
+        data class AIError(
+            val message: String
+        ) : Error()
     }
 }
 

@@ -15,10 +15,14 @@ interface StoryRepository {
 
     fun getStory(storyId: Long): StoryLine?
 
+    fun getStoryByTitle(storyTitle: String): StoryLine?
+
     fun getAllStories(): List<StoryLine>
-    fun saveStoryLine(storyLine: StoryLine, scenarios: List<Scenario>)
+    fun saveStoryLine(storyLine: StoryLine, scenarios: List<Scenario>): Long
     fun loadScenariosForStory(storyId: Long): List<Scenario>
     fun deleteStory(storyId: Long)
+    fun deleteStoryByTitle(title: String): Boolean
+    fun countStoriesByTitlePattern(title: String): Long
 
     fun clearAllStoriesAndScenarios()
 }

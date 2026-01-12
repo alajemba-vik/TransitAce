@@ -13,6 +13,7 @@ import com.alajemba.paristransitace.domain.repository.GameSessionRepository
 import com.alajemba.paristransitace.domain.repository.StoryRepository
 import com.alajemba.paristransitace.domain.usecase.game.CalculateFinalGradeUseCase
 import com.alajemba.paristransitace.ui.model.UIDataState
+import com.alajemba.paristransitace.utils.debugLog
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -109,9 +110,10 @@ internal class GameViewModel(
                 result.onSuccess { wrapper ->
                     gameSessionRepository.setNewSession(wrapper.storyLine, wrapper.scenarios)
                     _uiDataState.value = UIDataState.Success.ScenariosGenerated
-                }.onFailure {
+                }.onFailure { exception ->
                     gameSessionRepository.clearSession()
-                    _uiDataState.value = UIDataState.Error.AIError
+                    val errorMessage = extractErrorMessage(exception)
+                    _uiDataState.value = UIDataState.Error.AIError(errorMessage)
                 }
             } else {
                 val defaultScenarios = defaultScenariosProvider.getDefaultScenarios(!gameSetup.isEnglish)
@@ -129,9 +131,18 @@ internal class GameViewModel(
     }
 
     fun nextScenario(): Boolean {
-        return gameSessionRepository.nextScenario().also {
-            saveGameState(_userStatsState.value)
+        return gameSessionRepository.nextScenario()
+    }
+    fun endIfGameOver(): Boolean {
+        val stats = _userStatsState.value
+
+        // Check game over conditions
+        if (stats.budget < 0 || stats.morale <= 0 || stats.legalInfractionsCount >= 3) {
+            onGameOver(stats)
+            return true // Game over
         }
+
+        return false
     }
 
     fun calculateGameFinalGrade(
@@ -139,14 +150,27 @@ internal class GameViewModel(
         moraleRemaining: Int,
         legalInfractionsCount: Int
     ) {
-        _gameReport.value = calculateFinalGrade(budgetRemaining, moraleRemaining, legalInfractionsCount)
+        val initialBudget = storyLine?.initialBudget ?: 0.0
+        val initialMorale = storyLine?.initialMorale ?: 0
+
+        _gameReport.value = calculateFinalGrade(
+            budgetRemaining = budgetRemaining,
+            moraleRemaining = moraleRemaining,
+            initialMorale = initialMorale,
+            initialBudget = initialBudget,
+            legalInfractionsCount = legalInfractionsCount
+        )
     }
 
     fun saveCurrentStoryLine() {
-        print("Saving current story line with id '${storyLine?.id}'")
+        debugLog("Saving current story line with id '${storyLine?.id}'")
         val scenarios = gameSessionRepository.scenarios
         if (scenarios.isNotEmpty()) {
-            storyRepository.saveStoryLine(storyLine ?: return, scenarios)
+            val savedId = storyRepository.saveStoryLine(storyLine ?: return, scenarios)
+            // Update the story line ID in the session if it was null (new story)
+            if (storyLine?.id == null) {
+                gameSessionRepository.updateCurrentStoryLineId(savedId)
+            }
         }
     }
 
@@ -168,11 +192,29 @@ internal class GameViewModel(
             moraleRemaining = userStatsState.morale,
             legalInfractionsCount = userStatsState.legalInfractionsCount
         )
-        deleteSavedGame()
     }
 
     fun onRestart() {
         startGame()
         resetUserStats(storyLine ?: return)
+    }
+
+    private fun extractErrorMessage(exception: Throwable): String {
+        val rawMessage = exception.message ?: return ""
+
+        // Try to find JSON error object in the message
+        val errorPatterns = listOf(
+            // Matches: "message": "..."
+            """"message"\s*:\s*"([^"]+)"""".toRegex(),
+            // Matches: "error": { ... "message": "..." }
+            """"error"\s*:\s*\{[^}]*"message"\s*:\s*"([^"]+)"""".toRegex(),
+        )
+
+        for (pattern in errorPatterns) {
+            pattern.find(rawMessage)?.groupValues?.getOrNull(1)?.let { message ->
+                if (message.isNotBlank()) return message
+            }
+        }
+        return ""
     }
 }

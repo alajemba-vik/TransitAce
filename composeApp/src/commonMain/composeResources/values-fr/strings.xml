@@ -59,7 +59,7 @@
     <string name="secure_uplink_established">// LIAISON SÉCURISÉE ÉTABLIE</string>
 
     <string name="show_all_storylines">Montre-moi toutes les intrigues</string>
-    <string name="load_storyline">Charge l'intrigue [name]</string>
+    <string name="load_storyline">Charge l'intrigue [name / ID]</string>
     <string name="restart_game">Redémarrer ce jeu</string>
     <string name="help">Aide</string>
 

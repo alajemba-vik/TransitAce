@@ -6,6 +6,7 @@ import com.alajemba.paristransitace.domain.model.StoryLine
 import com.alajemba.paristransitace.domain.model.UserStats
 import com.alajemba.paristransitace.domain.repository.GameSessionRepository
 import com.alajemba.paristransitace.domain.repository.StoryRepository
+import com.alajemba.paristransitace.utils.debugLog
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -44,6 +45,10 @@ class GameSessionRepositoryImpl(
         clearCurrentScenario()
     }
 
+    override fun updateCurrentStoryLineId(id: Long) {
+        _currentStoryLine = _currentStoryLine?.copy(id = id)
+    }
+
     override fun loadStoryForSession(storyId: Long): Boolean {
         val scenarios = storyRepository.loadScenariosForStory(storyId)
         if (scenarios.isEmpty()) return false
@@ -69,6 +74,14 @@ class GameSessionRepositoryImpl(
         _currentScenario.value = null
     }
 
+    override fun restartCurrentStoryline() {
+        if (_scenarios.isNotEmpty()) {
+            _currentScenario.value = _scenarios.first().copy(currentIndexInGame = 0)
+        } else {
+            _currentScenario.value = null
+        }
+    }
+
     override fun clearSession() {
         _currentStoryLine = null
         _scenarios = emptyList()
@@ -92,14 +105,14 @@ class GameSessionRepositoryImpl(
     override fun loadSavedGame(): UserStats? {
         val saved = localDataSource.getSavedGame() ?: return null
 
-        println("Loaded saved game: $saved")
+        debugLog("Loaded saved game: $saved")
 
         val storyId = saved.storyId
         if (storyId != null) {
             if (!loadStoryForSession(storyId)) return null
         }
 
-        println("Fast forwarding to scenario index: ${saved.currentScenarioIndex}")
+        debugLog("Fast forwarding to scenario index: ${saved.currentScenarioIndex}")
         val targetIndex = saved.currentScenarioIndex.toInt()
         if (targetIndex in _scenarios.indices) {
             _currentScenario.value = _scenarios[targetIndex].copy(currentIndexInGame = targetIndex)

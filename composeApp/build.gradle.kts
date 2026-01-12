@@ -1,5 +1,3 @@
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
 
@@ -30,19 +28,6 @@ kotlin {
             baseName = "ComposeApp"
             isStatic = true
         }
-    }
-    
-    jvm()
-    
-    js {
-        browser()
-        binaries.executable()
-    }
-    
-    @OptIn(ExperimentalWasmDsl::class)
-    wasmJs {
-        browser()
-        binaries.executable()
     }
     
     sourceSets {
@@ -98,15 +83,12 @@ kotlin {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
         }
-        jvmMain.dependencies {
-            implementation(compose.desktop.currentOs)
-            implementation(libs.kotlinx.coroutinesSwing)
-        }
 
         iosMain.dependencies {
             // Have Ktor use the Darwin engine for iOS
             implementation(libs.ktor.client.darwin)
             // Have SQLDelight support IOS
+
             implementation(libs.native.driver)
         }
     }
@@ -137,23 +119,15 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+    buildFeatures {
+        buildConfig = true
+    }
 }
 
 dependencies {
     debugImplementation(compose.uiTooling)
 }
 
-compose.desktop {
-    application {
-        mainClass = "com.alajemba.paristransitace.MainKt"
-
-        nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "com.alajemba.paristransitace"
-            packageVersion = "1.0.0"
-        }
-    }
-}
 
 sqldelight {
     databases {
@@ -170,5 +144,9 @@ localProperties.load(localFile.inputStream())
 buildConfig {
     packageName("com.alajemba.paristransitace")
     val geminiKey = localProperties["GEMINI_API_KEY"]?.toString() ?: ""
+    val mistralKey = localProperties["MISTRALAI_API_KEY"]?.toString() ?: ""
+    val openAIKey = localProperties["OPENAI_API_KEY"]?.toString() ?: ""
     buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
+    buildConfigField("String", "MISTRALAI_API_KEY", "\"$mistralKey\"")
+    buildConfigField("String", "OPENAI_API_KEY", "\"$openAIKey\"")
 }

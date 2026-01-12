@@ -5,6 +5,7 @@ import com.alajemba.paristransitace.domain.repository.ChatAIRepository
 import com.alajemba.paristransitace.domain.repository.ChatAIResponse
 import com.alajemba.paristransitace.domain.repository.ChatRepository
 import com.alajemba.paristransitace.domain.repository.StoryRepository
+import com.alajemba.paristransitace.utils.debugLog
 
 class SendChatMessageUseCase(
     private val chatRepository: ChatRepository,
@@ -14,7 +15,7 @@ class SendChatMessageUseCase(
 
     suspend operator fun invoke(
         message: String,
-        isFrench: Boolean,
+        isEnglish: Boolean,
         gameContext: String? = null
     ): Result<ChatAIResponse> {
         chatRepository.insertMessage(message, MessageSender.USER)
@@ -22,8 +23,8 @@ class SendChatMessageUseCase(
         val chatHistory = chatRepository.getAllMessagesSync()
         val storyLines = storyRepository.getAllStories()
 
-        print("Sending message to ChatAIRepository: $message")
-        println(" with gameContext: ${chatHistory.joinToString { it.message }}")
+        debugLog("Sending message to ChatAIRepository: $message")
+        debugLog(" with gameContext: ${chatHistory.joinToString { it.message }}")
 
         val result = chatAIRepository.sendChatMessage(
             chatHistory = chatHistory,
@@ -38,7 +39,7 @@ class SendChatMessageUseCase(
         }
 
         result.onFailure {
-            val errorMessage = if (isFrench) {
+            val errorMessage = if (!isEnglish) {
                 "Une erreur est survenue. Sophia pourrait être en pause cigarette. (Erreur de connexion)"
             } else {
                 "There was an error. Sophia might be on a cigarette break. (Connection Error)"

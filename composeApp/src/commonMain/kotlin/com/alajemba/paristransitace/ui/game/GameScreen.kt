@@ -15,6 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alajemba.paristransitace.ui.chat.AIChatWindow
 import com.alajemba.paristransitace.ui.game.components.AnimatedGameOverOverlay
@@ -55,6 +57,14 @@ internal fun GameScreen(
         )
     )
     val coroutineScope = rememberCoroutineScope()
+    var isGameOver by remember { mutableStateOf(false) }
+    val currentIsGameOver by rememberUpdatedState(isGameOver)
+
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+        if (currentIsGameOver) {
+            gameViewModel.saveGameState(userStatsState)
+        }
+    }
 
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
@@ -65,7 +75,10 @@ internal fun GameScreen(
                 scenarioTitle = "${stringResource(Res.string.scenario).uppercase()} ${currentScenarioState?.id}",
                 progress = scenarioProgressState,
                 progressText = gameViewModel.scenarioProgressText.collectAsStateWithLifecycle("").value,
-                goHome = onNavigateHome,
+                goHome = {
+                    onNavigateHome()
+                    gameViewModel.deleteSavedGame()
+                },
             )
         },
         sheetPeekHeight = 0.dp,
@@ -101,7 +114,7 @@ internal fun GameScreen(
                     chatMessages = chatViewModel.chatMessages.collectAsState().value,
                     onSend = { msg -> chatViewModel.sendInGameMessage(
                         msg,
-                        userViewModel.gameSetupState.value,
+                        !userViewModel.gameSetupState.value.isEnglish,
                         gameContext = gameViewModel.getGameContext()
                     ) },
                     isNewMessageEnabled = true,
@@ -138,10 +151,12 @@ internal fun GameScreen(
                     }
                 )
 
-                var isGameOver by remember { mutableStateOf(false) }
-
                 when {
                     !isGameOver -> {
+                        fun onGameOver(){
+                            isGameOver = true
+                            gameViewModel.onGameOver(userStatsState)
+                        }
                         ScreenContent(
                             currentScenarioState,
                             onOptionSelected = { option ->
@@ -150,11 +165,13 @@ internal fun GameScreen(
                                     moraleImpact = option.moraleImpact,
                                     increaseLegalInfractionsBy = option.increaseLegalInfractionsBy
                                 )
+                                if (gameViewModel.endIfGameOver()){
+                                    onGameOver()
+                                }
                             },
                             loadNextScenario = {
                                 if (!gameViewModel.nextScenario()) {
-                                    isGameOver = true
-                                    gameViewModel.onGameOver(userStatsState)
+                                    onGameOver()
                                 }
                             }
                         )
@@ -338,7 +355,7 @@ private fun ScreenHeader(
                 HomeButton(
                     goHome,
                     progress >= 1f
-                    )
+                )
 
                 Spacer(modifier = Modifier.width(Dimens.Space.small))
 

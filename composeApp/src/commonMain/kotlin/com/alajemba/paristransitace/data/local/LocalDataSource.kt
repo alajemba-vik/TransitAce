@@ -8,6 +8,7 @@ import app.cash.sqldelight.coroutines.mapToOneOrNull
 import app.cash.sqldelight.db.QueryResult
 import com.alajemba.paristransitace.db.ParisTransitDatabase
 import com.alajemba.paristransitace.db.SavedGameState
+import com.alajemba.paristransitace.utils.debugLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
@@ -77,6 +78,10 @@ class LocalDataSource(private val database: ParisTransitDatabase) {
 
     fun getStoryById(storyId: Long) = queries.getStoryById(storyId).executeAsOneOrNull()
 
+    fun getStoryByTitle(storyTitle: String) = queries.getStoryByTitle(storyTitle).executeAsOneOrNull()
+
+    fun countStoriesByTitlePattern(title: String): Long = queries.countStoriesByTitlePattern(title).executeAsOne()
+
     fun insertStory(
         title: String,
         description: String,
@@ -145,7 +150,7 @@ class LocalDataSource(private val database: ParisTransitDatabase) {
         morale: Int,
         legalInfractionsCount: Int
     ) {
-        println("Saving game state for story id '$storyId' at scenario index '$currentScenarioIndex'")
+        debugLog("Saving game state for story id '$storyId' at scenario index '$currentScenarioIndex'")
         queries.insertOrUpdateSavedGame(
             storyId = storyId,
             currentScenarioIndex = currentScenarioIndex.toLong(),

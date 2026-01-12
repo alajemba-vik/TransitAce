@@ -3,7 +3,13 @@ package com.alajemba.paristransitace.data.remote
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.agent.config.AIAgentConfig
 import ai.koog.prompt.executor.clients.google.GoogleModels
+import ai.koog.prompt.executor.clients.mistralai.MistralAIModels
+import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.llms.all.simpleGoogleAIExecutor
+import ai.koog.prompt.executor.llms.all.simpleMistralAIExecutor
+import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
+import ai.koog.prompt.executor.model.PromptExecutor
+import ai.koog.prompt.llm.LLModel
 import com.alajemba.paristransitace.BuildConfig
 import com.alajemba.paristransitace.data.local.DefaultScenariosProvider
 import com.alajemba.paristransitace.data.mapper.toDomain
@@ -21,9 +27,16 @@ import com.alajemba.paristransitace.data.remote.model.FunctionDeclaration
 import com.alajemba.paristransitace.data.remote.model.FunctionParameters
 import com.alajemba.paristransitace.data.remote.model.GeminiRequest
 import com.alajemba.paristransitace.data.remote.model.GeminiResponse
+import com.alajemba.paristransitace.data.remote.model.MistralFunction
+import com.alajemba.paristransitace.data.remote.model.MistralFunctionParameters
+import com.alajemba.paristransitace.data.remote.model.MistralMessage
+import com.alajemba.paristransitace.data.remote.model.MistralRequest
+import com.alajemba.paristransitace.data.remote.model.MistralResponse
+import com.alajemba.paristransitace.data.remote.model.MistralTool
 import com.alajemba.paristransitace.data.remote.model.Part
 import com.alajemba.paristransitace.data.remote.model.Parts
 import com.alajemba.paristransitace.data.remote.model.Tool
+import com.alajemba.paristransitace.utils.debugLog
 import io.ktor.client.*
 import io.ktor.client.call.body
 import io.ktor.client.request.header
@@ -41,8 +54,12 @@ class LLMRemoteDataSource(
     private val defaultScenariosProvider: DefaultScenariosProvider
 ) : RemoteDataSource {
 
-    private val endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
-    private val apiKey = BuildConfig.GEMINI_API_KEY
+    private val googleGeminiEndpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+    private val mistralEndpoint = "https://api.mistral.ai/v1/chat/completions"
+    private val geminiKey = BuildConfig.GEMINI_API_KEY
+    private val openAIKey = BuildConfig.OPENAI_API_KEY
+    private val mistralAIKey = BuildConfig.MISTRALAI_API_KEY
+
     private val json = Json { ignoreUnknownKeys = true }
 
     override suspend fun generateScenarios(
@@ -54,10 +71,23 @@ class LLMRemoteDataSource(
             val isFrench = language == GameLanguage.FRENCH
             val systemPrompt = buildScenarioSystemPrompt(transitRulesJson, isFrench, plot)
 
+            val promptExecutor: PromptExecutor = when{
+                geminiKey.isNotBlank() -> simpleGoogleAIExecutor(geminiKey)
+                mistralAIKey.isNotBlank() -> simpleMistralAIExecutor(mistralAIKey)
+                else -> simpleOpenAIExecutor(openAIKey)
+            }
+
+            val  llm: LLModel = when{
+                geminiKey.isNotBlank() -> GoogleModels.Gemini2_5FlashLite
+                mistralAIKey.isNotBlank() -> MistralAIModels.Chat.MistralSmall2
+                else ->  OpenAIModels.Chat.GPT4o
+            }
+
+
             val agent = AIAgent(
-                promptExecutor = simpleGoogleAIExecutor(apiKey),
+                promptExecutor = promptExecutor,
                 agentConfig = AIAgentConfig.withSystemPrompt(
-                    llm = GoogleModels.Gemini2_5FlashLite,
+                    llm = llm,
                     prompt = systemPrompt,
                     maxAgentIterations = 3,
                     id = "scenario-generation-agent"
@@ -69,65 +99,155 @@ class LLMRemoteDataSource(
                 else "Générer le scénario en français."
             )
 
+            debugLog("Successfully generated scenarios from LLM: $agentResponse")
             parseScenarioResponse(agentResponse)
         } catch (e: Exception) {
+            debugLog("Error generating scenarios: ${e.message}")
             Result.failure(e)
         }
     }
 
+    // Supports Gemini AI and Mistral AI
     override suspend fun sendChatMessage(
         chatHistory: List<ChatMessage>,
         storyLines: List<StoryLine>,
         gameContext: String?
     ): Result<ChatAIResponse> {
         return try {
-            val conversationContent = chatHistory.map { chatMessage ->
-                Content(
-                    role = if (chatMessage.sender == MessageSender.USER) "user" else "model",
-                    parts = listOf(Part(text = chatMessage.message))
-                )
-            }
-
-            val requestBody = GeminiRequest(
-                systemInstruction = Parts(
-                    parts = listOf(Part(text = buildSophiaChatPrompt(gameContext, storyLines)))
-                ),
-                contents = conversationContent,
-                tools = listOf(gameTools)
-            )
-
-            val response = httpClient.post {
-                url(endpoint)
-                contentType(ContentType.Application.Json)
-                header("x-goog-api-key", apiKey)
-                setBody(requestBody)
-            }.body<GeminiResponse>()
-
-            val candidate = response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()
-
-            when {
-                candidate?.functionCall != null -> {
-                    Result.success(ChatAIResponse.ExecuteCommand(
-                        command = candidate.functionCall.name,
-                        arg = candidate.functionCall.args[FunctionParameters.PARAM_SCENARIO_ID]
-                    ))
-                }
-                !candidate?.text.isNullOrBlank() -> {
-                    Result.success(ChatAIResponse.TextResponse(candidate.text))
-                }
-                else -> {
-                    Result.success(ChatAIResponse.NoResponse)
-                }
+            if (geminiKey.isNotBlank()) {
+                sendChatMessageGemini(chatHistory, storyLines, gameContext)
+            } else if (mistralAIKey.isNotBlank()) {
+                sendChatMessageMistral(chatHistory, storyLines, gameContext)
+            } else {
+                Result.failure(Exception("No API key configured for chat"))
             }
         } catch (e: Exception) {
+            debugLog("Error sending chat message to LLM: ${e.message}")
             Result.failure(e)
+        }
+    }
+
+    private suspend fun sendChatMessageGemini(
+        chatHistory: List<ChatMessage>,
+        storyLines: List<StoryLine>,
+        gameContext: String?
+    ): Result<ChatAIResponse> {
+        val conversationContent = chatHistory.map { chatMessage ->
+            Content(
+                role = if (chatMessage.sender == MessageSender.USER) "user" else "model",
+                parts = listOf(Part(text = chatMessage.message))
+            )
+        }
+
+        val requestBody = GeminiRequest(
+            systemInstruction = Parts(
+                parts = listOf(Part(text = buildSophiaChatPrompt(gameContext, storyLines)))
+            ),
+            contents = conversationContent,
+            tools = listOf(gameTools)
+        )
+
+        val response = httpClient.post {
+            url(googleGeminiEndpoint)
+            contentType(ContentType.Application.Json)
+            header("x-goog-api-key", geminiKey)
+            setBody(requestBody)
+        }.body<GeminiResponse>()
+
+        val candidate = response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()
+
+        return when {
+            candidate?.functionCall != null -> {
+                Result.success(ChatAIResponse.ExecuteCommand(
+                    command = candidate.functionCall.name,
+                    arg = candidate.functionCall.args[FunctionParameters.PARAM_SCENARIO_ID]
+                ))
+            }
+            !candidate?.text.isNullOrBlank() -> {
+                Result.success(ChatAIResponse.TextResponse(candidate.text))
+            }
+            else -> {
+                Result.success(ChatAIResponse.NoResponse)
+            }
+        }.also {
+            debugLog("Successfully sent chat message to Gemini: $response")
+        }
+    }
+
+    private suspend fun sendChatMessageMistral(
+        chatHistory: List<ChatMessage>,
+        storyLines: List<StoryLine>,
+        gameContext: String?
+    ): Result<ChatAIResponse> {
+        val systemMessage = MistralMessage(
+            role = "system",
+            content = buildSophiaChatPrompt(gameContext, storyLines)
+        )
+
+        val conversationMessages = chatHistory.map { chatMessage ->
+            MistralMessage(
+                role = if (chatMessage.sender == MessageSender.USER) "user" else "assistant",
+                content = chatMessage.message
+            )
+        }
+
+        val requestBody = MistralRequest(
+            model = "mistral-small-latest",
+            messages = listOf(systemMessage) + conversationMessages,
+            tools = mistralGameTools,
+            toolChoice = "auto",
+            parallelToolCalls = false
+        )
+
+        val response = httpClient.post {
+            url(mistralEndpoint)
+            contentType(ContentType.Application.Json)
+            header("Authorization", "Bearer $mistralAIKey")
+            setBody(requestBody)
+        }.body<MistralResponse>()
+
+        // Check for API error
+        response.error?.let { error ->
+            return Result.failure(Exception(error.message ?: "Mistral API error"))
+        }
+
+        val choice = response.choices?.firstOrNull()
+        val message = choice?.message
+
+        return when {
+            message?.toolCalls?.isNotEmpty() == true -> {
+                val toolCall = message.toolCalls.first()
+                val args = json.parseToJsonElement(toolCall.function.arguments).jsonObject
+                val scenarioId = args[FunctionParameters.PARAM_SCENARIO_ID]?.jsonPrimitive?.contentOrNull
+
+                Result.success(ChatAIResponse.ExecuteCommand(
+                    command = toolCall.function.name,
+                    arg = scenarioId
+                ))
+            }
+            !message?.content.isNullOrBlank() -> {
+                Result.success(ChatAIResponse.TextResponse(message.content))
+            }
+            else -> {
+                Result.success(ChatAIResponse.NoResponse)
+            }
+        }.also {
+            debugLog("Successfully sent chat message to Mistral: $response")
         }
     }
 
     private fun parseScenarioResponse(response: String): Result<ScenariosWrapper> {
 
         return try {
-            val jsonResponse = json.parseToJsonElement(response)
+            // Strip markdown code fences if present (handles newlines)
+            val cleanedResponse = response
+                .trim()
+                .replace(Regex("^```json\\s*"), "")
+                .replace(Regex("^```\\s*"), "")
+                .replace(Regex("\\s*```$"), "")
+                .trim()
+
+            val jsonResponse = json.parseToJsonElement(cleanedResponse)
             val storyLineTitle = jsonResponse.jsonObject["storyLineTitle"]?.jsonPrimitive?.content ?: "Untitled Story"
             val storyLineDescription = jsonResponse.jsonObject["storyLineDescription"]?.jsonPrimitive?.content ?: ""
             val initialBudget = jsonResponse.jsonObject["initialBudget"]?.jsonPrimitive?.doubleOrNull ?: 0.0
@@ -153,6 +273,7 @@ class LLMRemoteDataSource(
                 )
             )
         } catch (e: Exception) {
+            debugLog("Error parsing LLM response: ${e.message}")
             Result.failure(e)
         }
     }
@@ -289,3 +410,67 @@ val gameTools = Tool(
         )
     )
 )
+
+// Mistral AI tools - same functions but in Mistral's format
+val mistralGameTools = listOf(
+    // Action 1: See All Storylines
+    MistralTool(
+        type = "function",
+        function = MistralFunction(
+            name = FunctionDeclaration.DECL_GET_ALL_STORYLINES,
+            description = "Retrieves and displays a list of all available game storylines or scenarios.",
+            parameters = MistralFunctionParameters(
+                type = "object",
+                properties = emptyMap(),
+                required = emptyList()
+            )
+        )
+    ),
+    // Action 2: Load New Storyline
+    MistralTool(
+        type = "function",
+        function = MistralFunction(
+            name = FunctionDeclaration.DECL_LOAD_STORYLINE,
+            description = "Clears the current session and loads a specific storyline. Requires a keyword or ID.",
+            parameters = MistralFunctionParameters(
+                type = "object",
+                properties = mapOf(
+                    FunctionParameters.PARAM_SCENARIO_ID to JsonObject(
+                        mapOf(
+                            "type" to JsonPrimitive("integer"),
+                            "description" to JsonPrimitive("The exact ID of the scenario to load.")
+                        )
+                    )
+                ),
+                required = listOf(FunctionParameters.PARAM_SCENARIO_ID)
+            )
+        )
+    ),
+    // Action 3: Reset Game
+    MistralTool(
+        type = "function",
+        function = MistralFunction(
+            name = FunctionDeclaration.DECL_RESTART_GAME,
+            description = "Resets the current storyline progress back to the beginning (0% completion).",
+            parameters = MistralFunctionParameters(
+                type = "object",
+                properties = emptyMap(),
+                required = emptyList()
+            )
+        )
+    ),
+    // Action 4: Help
+    MistralTool(
+        type = "function",
+        function = MistralFunction(
+            name = FunctionDeclaration.DECL_SHOW_HELP,
+            description = "Displays a help menu listing all available commands and actions Sophia can perform.",
+            parameters = MistralFunctionParameters(
+                type = "object",
+                properties = emptyMap(),
+                required = emptyList()
+            )
+        )
+    )
+)
+

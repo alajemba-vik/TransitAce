@@ -18,6 +18,8 @@ import com.alajemba.paristransitace.domain.model.GameLanguage
 import com.alajemba.paristransitace.ui.game.GameScreen
 import com.alajemba.paristransitace.ui.home.HomeScreen
 import com.alajemba.paristransitace.ui.landing.LandingScreen
+import com.alajemba.paristransitace.ui.model.ChatMessageSender
+import com.alajemba.paristransitace.ui.model.ChatUiModel
 import com.alajemba.paristransitace.ui.viewmodels.ChatViewModel
 import com.alajemba.paristransitace.ui.viewmodels.GameViewModel
 import com.alajemba.paristransitace.ui.viewmodels.UserViewModel
@@ -65,6 +67,9 @@ fun AppNavHost() {
                 composable<LandingRoute> {
                     LandingScreen(
                         onStartGame = {
+                            if (userViewModel.gameSetupState.value.isOnLanguageStep) {
+                                chatViewModel.attachSystemMessage("English(E) / Français(F) ?")
+                            }
                             navController.navigate(
                                 if (userViewModel.gameSetupState.value.isSetupComplete) GameRoute else HomeRoute
                             ) {

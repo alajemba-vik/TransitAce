@@ -26,6 +26,9 @@ data class FunctionDeclaration(
         const val DECL_LOAD_STORYLINE = "load_new_storyline"
         const val DECL_RESTART_GAME = "reset_game"
         const val DECL_SHOW_HELP = "show_help"
+        const val DECL_CLEAR_CHAT = "clear_chat"
+        const val DECL_DELETE_STORYLINE = "delete_storyline"
+        const val DECL_DELETE_ALL_STORYLINES = "delete_all_storylines"
     }
 }
 
