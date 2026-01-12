@@ -145,8 +145,6 @@ buildConfig {
     packageName("com.alajemba.paristransitace")
     val geminiKey = localProperties["GEMINI_API_KEY"]?.toString() ?: ""
     val mistralKey = localProperties["MISTRALAI_API_KEY"]?.toString() ?: ""
-    val openAIKey = localProperties["OPENAI_API_KEY"]?.toString() ?: ""
     buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
     buildConfigField("String", "MISTRALAI_API_KEY", "\"$mistralKey\"")
-    buildConfigField("String", "OPENAI_API_KEY", "\"$openAIKey\"")
 }

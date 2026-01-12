@@ -13,11 +13,13 @@
 
 ## Motivation and Background
 
-As an international student arriving in France, I quickly realized that navigating the Paris Metro is about more than just reading a map—it's about surviving the *culture*. From knowing how to handle a ticket inspector ("Contrôleur") to dealing with sudden strikes, there are unwritten rules that apps like Google Maps don't teach you.
+I volunteered as a student ambassador in my college to help international students navigate the transport system. I quickly noticed a pattern: despite sharing curated videos and articles about how to validate tickets or handle inspections, many students simply didn't watch them. The result? They lost passive information just didn't stick.
 
-I wanted to gamify this learning curve. Instead of a boring guide, I created a simulation game that teaches through experience. The goal was to solve the anxiety of the unknown by letting players make mistakes in a safe environment before facing the real thing.
+I realized that **Gamified Learning** offers a solution that pamphlets can't: it transforms passive reading into active, experiential memory. You might forget a rule you read in a PDF, but you remember the anxiety of getting "caught" by a ticket inspector in a simulation.
 
-By utilizing generative AI, the game creates unique scenarios every playthrough—no two games are the same. Players learn practical survival skills for French public transport while being entertained by the absurdity of it all.
+**Paris Transit Ace** was born from this insight. It started as a simple web app for my schoolmates, but the overwhelming feedback was, "This would be better on a phone."
+
+I rebuilt the project as a native mobile experience using **Kotlin Multiplatform (KMM)** and **Generative AI** to solve the anxiety of the unknown. By simulating the unwritten rules of the Paris Metro—from "Contrôleurs" to sudden strikes—in a safe environment, players learn practical survival skills before facing the real thing.
 
 ---
 
@@ -49,7 +51,7 @@ By utilizing generative AI, the game creates unique scenarios every playthrough�
 
 ### AI-Driven Gameplay
 * **Dynamic Scenario Generation:** AI generates unique storylines with branching choices based on your selected simulation type
-* **Multiple AI Provider Support:** Supports Google Gemini, Mistral AI, and OpenAI APIs
+* **Multiple AI Provider Support:** Supports Google Gemini and Mistral AI APIs
 * **Function Calling Integration:** AI can execute game commands directly through natural language
 * **Bilingual Support:** Full support for English and French gameplay
 
@@ -126,10 +128,9 @@ Supports multiple AI providers:
 |----------|-------|:-------------------:|:-----------------------:|
 | Google Gemini | gemini-2.5-flash | ✅ | ✅ |
 | Mistral AI | mistral-small-latest | ✅ | ✅ |
-| OpenAI | gpt-4o | ✅ | ❌ |
 
 **Features:**
-* **Scenario Generation:** All three providers can generate complete storylines with branching scenarios
+* **Scenario Generation:** Both providers can generate complete storylines with branching scenarios
 * **Response Cleanup:** Automatically strips markdown code fences from AI responses
 
 **Function Calling (Two Modes):**
@@ -169,20 +170,33 @@ The game supports executing commands through the chat interface using two differ
 * **JDK 17** or newer
 * **Android Studio Ladybug** (2024.2.1) or newer
 * **Xcode 15+** (for iOS builds on macOS)
-* At least one AI API key (Gemini, Mistral, or OpenAI)
+* At least one AI API key (Gemini or Mistral)
 
 ### API Key Configuration
 
-1. Create `local.properties` in the project root:
+You'll need at least one API key from the following providers:
+
+**Google Gemini:**
+1. Go to [Google AI Studio](https://aistudio.google.com/)
+2. Sign in with your Google account
+3. Click "Get API Key" → "Create API key"
+4. Copy the generated key
+
+**Mistral AI:**
+1. Go to [Mistral AI Console](https://console.mistral.ai/)
+2. Create an account or sign in
+3. Navigate to "API Keys" section
+4. Click "Create new key" and copy it
+
+Once you have your key(s), create `local.properties` in the project root:
 
 ```properties
 # At least one key is required
 GEMINI_API_KEY=your_gemini_api_key_here
 MISTRALAI_API_KEY=your_mistral_api_key_here
-OPENAI_API_KEY=your_openai_api_key_here
 ```
 
-2. Run the application for the build system injects these keys via `BuildConfig`
+Run the application and the build system will inject these keys via `BuildConfig`.
 
 > ⚠️ **Important:** Never commit `local.properties` to version control.
 
@@ -263,6 +277,23 @@ Your final grade is calculated based on:
 
 ---
 
+## Project Structure
+
+```
+UI Layer        →  HomeScreen, GameScreen, LandingScreen
+                        ↓ 
+                            (shared)
+ViewModels      →  UserViewModel, GameViewModel, ChatViewModel
+                        ↓
+                        
+Domain Layer    →  Use Cases, Repository Interfaces
+
+                        ↓
+Data Layer      →  LocalDataSource (SQLDelight), LLMRemoteDataSource (AI APIs)
+```
+
+---
+
 ## Testing
 
 Run all tests:
@@ -278,41 +309,6 @@ Run specific tests:
 
 ---
 
-## Project Structure
-
-```
-ParisTransitAce/
-├── composeApp/
-│   └── src/
-│       ├── commonMain/kotlin/com/alajemba/paristransitace/
-│       │   ├── data/
-│       │   │   ├── local/         # SQLDelight data source
-│       │   │   ├── remote/        # LLM API clients
-│       │   │   ├── repository/    # Repository implementations
-│       │   │   └── mapper/        # Data mappers
-│       │   ├── domain/
-│       │   │   ├── model/         # Domain models
-│       │   │   ├── repository/    # Repository interfaces
-│       │   │   └── usecase/       # Business logic
-│       │   ├── ui/
-│       │   │   ├── chat/          # Chat UI components
-│       │   │   ├── game/          # Game screen
-│       │   │   ├── home/          # Home/setup screen
-│       │   │   ├── landing/       # Landing screen
-│       │   │   ├── components/    # Shared UI components
-│       │   │   ├── viewmodels/    # ViewModels
-│       │   │   ├── navigation/    # Navigation setup
-│       │   │   └── theme/         # Colors, typography
-│       │   └── di/                # Koin modules
-│       ├── androidMain/           # Android implementations
-│       ├── iosMain/               # iOS implementations
-│       └── commonTest/            # Shared tests
-├── iosApp/                        # iOS app entry point
-├── gradle/                        # Gradle wrapper & version catalog
-└── local.properties               # API keys (not committed)
-```
-
----
 
 ## Future Steps
 

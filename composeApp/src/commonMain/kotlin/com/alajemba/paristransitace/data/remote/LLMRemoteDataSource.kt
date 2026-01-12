@@ -4,10 +4,8 @@ import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.agent.config.AIAgentConfig
 import ai.koog.prompt.executor.clients.google.GoogleModels
 import ai.koog.prompt.executor.clients.mistralai.MistralAIModels
-import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.llms.all.simpleGoogleAIExecutor
 import ai.koog.prompt.executor.llms.all.simpleMistralAIExecutor
-import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
 import com.alajemba.paristransitace.BuildConfig
@@ -57,7 +55,6 @@ class LLMRemoteDataSource(
     private val googleGeminiEndpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
     private val mistralEndpoint = "https://api.mistral.ai/v1/chat/completions"
     private val geminiKey = BuildConfig.GEMINI_API_KEY
-    private val openAIKey = BuildConfig.OPENAI_API_KEY
     private val mistralAIKey = BuildConfig.MISTRALAI_API_KEY
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -74,13 +71,13 @@ class LLMRemoteDataSource(
             val promptExecutor: PromptExecutor = when{
                 geminiKey.isNotBlank() -> simpleGoogleAIExecutor(geminiKey)
                 mistralAIKey.isNotBlank() -> simpleMistralAIExecutor(mistralAIKey)
-                else -> simpleOpenAIExecutor(openAIKey)
+                else -> throw IllegalStateException("No API key configured. Please add GEMINI_API_KEY or MISTRALAI_API_KEY to local.properties")
             }
 
             val  llm: LLModel = when{
                 geminiKey.isNotBlank() -> GoogleModels.Gemini2_5FlashLite
                 mistralAIKey.isNotBlank() -> MistralAIModels.Chat.MistralSmall2
-                else ->  OpenAIModels.Chat.GPT4o
+                else -> throw IllegalStateException("No API key configured")
             }
 
 
