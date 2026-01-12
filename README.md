@@ -98,6 +98,20 @@ Natural language commands to control the game:
 
 </p>
 
+### Demo Video
+
+**Custom Scenario Gameplay:**
+<p align="center">
+  <video src="docs/screenshots/custom_gameplay.mp4" width="300" controls></video>
+</p>
+
+**Default Scenario Gameplay:**
+<p align="center">
+  <video src="docs/screenshots/default_gameplay.mp4" width="300" controls></video>
+</p>
+
+> Note: If the video doesn't play in your browser, [download them here](docs/screenshots/).
+
 ---
 
 ## Technical Implementation
